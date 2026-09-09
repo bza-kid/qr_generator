@@ -10,7 +10,7 @@
 
     <meta
         name="description"
-        content="Direct browser-to-browser temporary file transfer using WebRTC"
+        content="Direct browser-to-browser file transfer using WebRTC"
     >
 
     <title>Quick File Transfer</title>
@@ -23,9 +23,6 @@
         body {
             margin: 0;
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             padding: 24px;
             font-family: Arial, Helvetica, sans-serif;
             background: #f3f6fb;
@@ -34,17 +31,22 @@
 
         .container {
             width: 100%;
-            max-width: 560px;
-            padding: 40px;
-            text-align: center;
+            max-width: 680px;
+            margin: 20px auto;
+            padding: 36px;
             background: #ffffff;
             border-radius: 18px;
             box-shadow: 0 12px 35px rgba(23, 32, 51, 0.12);
         }
 
+        .header {
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
         .icon {
-            margin-bottom: 16px;
-            font-size: 52px;
+            margin-bottom: 12px;
+            font-size: 50px;
         }
 
         h1 {
@@ -52,50 +54,230 @@
             font-size: 32px;
         }
 
+        h2 {
+            margin-top: 0;
+            font-size: 24px;
+        }
+
         p {
-            margin: 8px 0;
             line-height: 1.6;
             color: #566074;
         }
 
-        .status {
-            margin-top: 24px;
-            padding: 14px;
-            font-weight: bold;
-            color: #137333;
-            background: #e9f7ed;
-            border: 1px solid #b7e1c1;
+        .privacy-note {
+            margin-top: 18px;
+            padding: 12px;
+            font-size: 14px;
+            color: #315b3a;
+            background: #edf8ef;
+            border: 1px solid #b9dfc0;
             border-radius: 10px;
         }
 
-        .note {
-            margin-top: 24px;
+        .choice-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 18px;
+        }
+
+        .choice-button {
+            min-height: 160px;
+            padding: 24px;
+            font: inherit;
+            color: #172033;
+            background: #ffffff;
+            border: 2px solid #d9e0ec;
+            border-radius: 14px;
+            cursor: pointer;
+            transition:
+                transform 0.2s,
+                border-color 0.2s,
+                box-shadow 0.2s;
+        }
+
+        .choice-button:hover {
+            transform: translateY(-2px);
+            border-color: #246bfd;
+            box-shadow: 0 8px 22px rgba(36, 107, 253, 0.13);
+        }
+
+        .choice-button:focus-visible {
+            outline: 3px solid rgba(36, 107, 253, 0.25);
+            outline-offset: 3px;
+        }
+
+        .choice-icon {
+            display: block;
+            margin-bottom: 14px;
+            font-size: 38px;
+        }
+
+        .choice-title {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .choice-description {
+            display: block;
             font-size: 14px;
+            line-height: 1.5;
+            color: #667085;
+        }
+
+        .panel {
+            display: none;
+            margin-top: 24px;
+            padding: 24px;
+            background: #f8faff;
+            border: 1px solid #dce4f1;
+            border-radius: 14px;
+        }
+
+        .panel.active {
+            display: block;
+        }
+
+        .back-button {
+            margin-bottom: 18px;
+            padding: 10px 16px;
+            font: inherit;
+            font-weight: bold;
+            color: #24405f;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .status {
+            padding: 14px;
+            color: #67530b;
+            background: #fff8dc;
+            border: 1px solid #ead98c;
+            border-radius: 8px;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 14px;
+            }
+
+            .container {
+                margin: 10px auto;
+                padding: 24px 18px;
+            }
+
+            h1 {
+                font-size: 27px;
+            }
+
+            .choice-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .choice-button {
+                min-height: 135px;
+            }
         }
     </style>
 </head>
 
 <body>
     <main class="container">
-        <div class="icon" aria-hidden="true">⇄</div>
+        <header class="header">
+            <div class="icon" aria-hidden="true">⇄</div>
 
-        <h1>Quick File Transfer</h1>
+            <h1>Quick File Transfer</h1>
 
-        <p>
-            Transfer files directly between two browsers using WebRTC.
-        </p>
+            <p>
+                Transfer a file directly between two browsers using WebRTC.
+            </p>
 
-        <p>
-            Files are not permanently stored by this website.
-        </p>
+            <div class="privacy-note">
+                Files are not uploaded to or permanently stored by this website.
+                Both devices must remain online during the transfer.
+            </div>
+        </header>
 
-        <div class="status">
-            Website setup successful
-        </div>
+        <section id="choiceSection">
+            <div class="choice-grid">
+                <button
+                    class="choice-button"
+                    type="button"
+                    onclick="showPanel('senderPanel')"
+                >
+                    <span class="choice-icon" aria-hidden="true">↑</span>
+                    <span class="choice-title">Send a File</span>
+                    <span class="choice-description">
+                        Select a file and create a connection offer.
+                    </span>
+                </button>
 
-        <p class="note">
-            The file-transfer controls will be added in the next steps.
-        </p>
+                <button
+                    class="choice-button"
+                    type="button"
+                    onclick="showPanel('receiverPanel')"
+                >
+                    <span class="choice-icon" aria-hidden="true">↓</span>
+                    <span class="choice-title">Receive a File</span>
+                    <span class="choice-description">
+                        Enter a connection offer from the sender.
+                    </span>
+                </button>
+            </div>
+        </section>
+
+        <section id="senderPanel" class="panel">
+            <button
+                class="back-button"
+                type="button"
+                onclick="showChoices()"
+            >
+                ← Back
+            </button>
+
+            <h2>Send a File</h2>
+
+            <div class="status">
+                The file selection and WebRTC controls will be added next.
+            </div>
+        </section>
+
+        <section id="receiverPanel" class="panel">
+            <button
+                class="back-button"
+                type="button"
+                onclick="showChoices()"
+            >
+                ← Back
+            </button>
+
+            <h2>Receive a File</h2>
+
+            <div class="status">
+                The connection and download controls will be added next.
+            </div>
+        </section>
     </main>
+
+    <script>
+        function showPanel(panelId) {
+            document.getElementById("choiceSection").style.display = "none";
+
+            document.getElementById("senderPanel").classList.remove("active");
+            document.getElementById("receiverPanel").classList.remove("active");
+
+            document.getElementById(panelId).classList.add("active");
+        }
+
+        function showChoices() {
+            document.getElementById("senderPanel").classList.remove("active");
+            document.getElementById("receiverPanel").classList.remove("active");
+
+            document.getElementById("choiceSection").style.display = "block";
+        }
+    </script>
 </body>
 </html>
