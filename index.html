@@ -184,6 +184,11 @@
             margin-top: 14px;
         }
 
+        .qr-download-row {
+            justify-content: center;
+            margin-top: 20px;
+        }
+
         .status {
             padding: 14px;
             color: #67530b;
@@ -192,17 +197,20 @@
             border-radius: 8px;
         }
 
+        .form-group {
+            margin-bottom: 20px;
+        }
+
         .form-label {
             display: block;
             margin-bottom: 8px;
             font-weight: bold;
         }
 
+        .label-input,
         .text-input {
             width: 100%;
-            min-height: 130px;
-            padding: 14px;
-            resize: vertical;
+            padding: 13px 14px;
             font: inherit;
             line-height: 1.5;
             color: #172033;
@@ -211,9 +219,21 @@
             border-radius: 9px;
         }
 
+        .text-input {
+            min-height: 130px;
+            resize: vertical;
+        }
+
+        .label-input:focus,
         .text-input:focus {
             outline: 3px solid rgba(36, 107, 253, 0.15);
             border-color: #246bfd;
+        }
+
+        .field-note {
+            margin: 7px 0 0;
+            font-size: 13px;
+            color: #667085;
         }
 
         .character-count {
@@ -373,7 +393,7 @@
                     </span>
 
                     <span class="choice-description">
-                        Create a temporary on-screen QR code for text or a link.
+                        Create an on-screen QR code for text or a link.
                     </span>
                 </button>
             </div>
@@ -425,24 +445,50 @@
             <h2>Generate QR Code</h2>
 
             <p>
-                Enter ordinary text or a complete website link. Include
-                <strong>https://</strong> when entering a website address.
+                Enter a short identifying label and the text or link that
+                must be encoded.
             </p>
 
-            <label class="form-label" for="qrText">
-                Text or link
-            </label>
+            <div class="form-group">
+                <label class="form-label" for="qrLabel">
+                    QR code label
+                </label>
 
-            <textarea
-                id="qrText"
-                class="text-input"
-                maxlength="1000"
-                placeholder="Example: https://github.com"
-                oninput="updateCharacterCount()"
-            ></textarea>
+                <input
+                    id="qrLabel"
+                    class="label-input"
+                    type="text"
+                    maxlength="80"
+                    placeholder="Example: Project meeting link"
+                >
 
-            <div id="characterCount" class="character-count">
-                0 / 1000 characters
+                <p class="field-note">
+                    This label will appear below the QR code in the downloaded
+                    image. If left blank, a label will be created automatically.
+                </p>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="qrText">
+                    Text or link
+                </label>
+
+                <textarea
+                    id="qrText"
+                    class="text-input"
+                    maxlength="1000"
+                    placeholder="Example: https://github.com"
+                    oninput="updateCharacterCount()"
+                ></textarea>
+
+                <div id="characterCount" class="character-count">
+                    0 / 1000 characters
+                </div>
+
+                <p class="field-note">
+                    Include <strong>https://</strong> when entering a website
+                    address.
+                </p>
             </div>
 
             <div class="button-row">
@@ -478,14 +524,24 @@
                     aria-label="Generated QR code"
                 ></canvas>
 
+                <div class="button-row qr-download-row">
+                    <button
+                        class="primary-button"
+                        type="button"
+                        onclick="downloadQrCode()"
+                    >
+                        Download Labelled QR Code
+                    </button>
+                </div>
+
                 <p class="qr-note">
-                    Scan the QR code before selecting Clear, Back, refreshing,
-                    or closing this page.
+                    The downloaded PNG image will contain the QR code,
+                    identifying label, and a short instruction.
                 </p>
             </div>
         </section>
     </main>
 
-<script type="module" src="./app.js"></script>
+    ./app.jsscript>
 </body>
 </html>
