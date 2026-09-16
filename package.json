@@ -2,7 +2,8 @@
   "name": "qr-generator",
   "version": "1.0.0",
   "private": true,
-  "description": "Browser-based QR-code generator hosted on GitHub Pages",
+  "description": "Browser-based QR-code and temporary file-transfer tools",
+  "type": "module",
   "scripts": {
     "build": "vite build"
   },
