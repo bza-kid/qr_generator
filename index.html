@@ -10,7 +10,7 @@
 
     <meta
         name="description"
-        content="Browser-based utilities for direct file transfer and QR-code generation"
+        content="Browser-based QR-code and temporary file-transfer tools"
     >
 
     <title>Quick Transfer Tools</title>
@@ -25,8 +25,8 @@
             min-height: 100vh;
             padding: 24px;
             font-family: Arial, Helvetica, sans-serif;
-            background: #f3f6fb;
             color: #172033;
+            background: #f3f6fb;
         }
 
         .container {
@@ -257,14 +257,14 @@
             display: block;
             width: min(100%, 320px);
             height: auto;
-            margin: 0 auto 18px;
+            margin: 0 auto;
             image-rendering: pixelated;
             border: 12px solid #ffffff;
             box-shadow: 0 4px 18px rgba(23, 32, 51, 0.14);
         }
 
         .qr-note {
-            margin: 10px 0 0;
+            margin: 18px 0 0;
             font-size: 13px;
         }
 
@@ -312,8 +312,8 @@
             <h1>Quick Transfer Tools</h1>
 
             <p>
-                Browser-based utilities for file transfer and QR-code
-                generation.
+                Browser-based tools for temporary file transfer and
+                QR-code generation.
             </p>
 
             <div class="privacy-note">
@@ -324,6 +324,7 @@
 
         <section id="choiceSection">
             <div class="choice-grid">
+
                 <button
                     class="choice-button"
                     type="button"
@@ -336,7 +337,7 @@
                     </span>
 
                     <span class="choice-description">
-                        Select a file and create a connection offer.
+                        Select a file and create a temporary connection offer.
                     </span>
                 </button>
 
@@ -352,7 +353,7 @@
                     </span>
 
                     <span class="choice-description">
-                        Enter a connection offer from the sender.
+                        Enter or scan a connection offer from the sender.
                     </span>
                 </button>
 
@@ -368,9 +369,10 @@
                     </span>
 
                     <span class="choice-description">
-                        Create a QR code for ordinary text or a website link.
+                        Create a temporary on-screen QR code for text or a link.
                     </span>
                 </button>
+
             </div>
         </section>
 
@@ -386,8 +388,8 @@
             <h2>Send a File</h2>
 
             <div class="status">
-                File transfer is currently disabled. No file will be uploaded
-                or transferred.
+                File-transfer functionality has not yet been enabled.
+                No file will be uploaded or transferred.
             </div>
         </section>
 
@@ -403,8 +405,8 @@
             <h2>Receive a File</h2>
 
             <div class="status">
-                File transfer is currently disabled. No connection will be
-                created.
+                File-transfer functionality has not yet been enabled.
+                No connection will be created.
             </div>
         </section>
 
@@ -420,8 +422,8 @@
             <h2>Generate QR Code</h2>
 
             <p>
-                Enter ordinary text or a complete website link. For website
-                links, include <strong>https://</strong>.
+                Enter ordinary text or a complete website link. Include
+                <strong>https://</strong> when entering a website address.
             </p>
 
             <label class="form-label" for="qrText">
@@ -473,142 +475,14 @@
                     aria-label="Generated QR code"
                 ></canvas>
 
-                <div class="button-row">
-                    <button
-                        class="primary-button"
-                        type="button"
-                        onclick="downloadQrCode()"
-                    >
-                        Download QR Code
-                    </button>
-                </div>
-
                 <p class="qr-note">
-                    Verify the QR code by scanning it before sharing.
+                    Scan the QR code before selecting Clear, Back, refreshing,
+                    or closing this page.
                 </p>
             </div>
         </section>
     </main>
 
-    <script>
-        const panelIds = [
-            "senderPanel",
-            "receiverPanel",
-            "qrPanel"
-        ];
-
-        function showPanel(panelId) {
-            document.getElementById("choiceSection").style.display = "none";
-
-            panelIds.forEach(function (id) {
-                document.getElementById(id).classList.remove("active");
-            });
-
-            document.getElementById(panelId).classList.add("active");
-        }
-
-        function showChoices() {
-            panelIds.forEach(function (id) {
-                document.getElementById(id).classList.remove("active");
-            });
-
-            document.getElementById("choiceSection").style.display = "block";
-        }
-
-        function updateCharacterCount() {
-            const text = document.getElementById("qrText").value;
-            const counter = document.getElementById("characterCount");
-
-            counter.textContent = text.length + " / 1000 characters";
-        }
-
-        function showMessage(message, type) {
-            const messageBox = document.getElementById("qrMessage");
-
-            messageBox.textContent = message;
-            messageBox.className = "message " + type;
-        }
-
-        function clearMessage() {
-            const messageBox = document.getElementById("qrMessage");
-
-            messageBox.textContent = "";
-            messageBox.className = "message";
-        }
-
-        async function generateQrCode() {
-            const text = document.getElementById("qrText").value.trim();
-            const result = document.getElementById("qrResult");
-
-            clearMessage();
-            result.classList.remove("active");
-
-            if (!text) {
-                showMessage(
-                    "Enter some text or a website link first.",
-                    "error"
-                );
-
-                return;
-            }
-
-            if (!("BarcodeDetector" in window)) {
-                showMessage(
-                    "This browser does not provide the required built-in " +
-                    "QR-code feature. Try the latest version of Chrome or Edge.",
-                    "error"
-                );
-
-                return;
-            }
-
-            try {
-                const supportedFormats =
-                    await BarcodeDetector.getSupportedFormats();
-
-                if (!supportedFormats.includes("qr_code")) {
-                    showMessage(
-                        "QR-code generation is not supported by this browser.",
-                        "error"
-                    );
-
-                    return;
-                }
-
-                /*
-                 * BarcodeDetector can read QR codes but cannot create them.
-                 * The next project step will add the QR encoder directly
-                 * to this repository without using an external API.
-                 */
-                showMessage(
-                    "The QR-code interface is ready. The local QR encoder " +
-                    "will be added in the next step.",
-                    "success"
-                );
-            } catch (error) {
-                showMessage(
-                    "The browser could not initialize the QR-code feature.",
-                    "error"
-                );
-            }
-        }
-
-        function clearQrCode() {
-            document.getElementById("qrText").value = "";
-            document.getElementById("qrResult").classList.remove("active");
-
-            clearMessage();
-            updateCharacterCount();
-        }
-
-        function downloadQrCode() {
-            const canvas = document.getElementById("qrCanvas");
-            const downloadLink = document.createElement("a");
-
-            downloadLink.download = "qr-code.png";
-            downloadLink.href = canvas.toDataURL("image/png");
-            downloadLink.click();
-        }
-    </script>
+    ./app.jsscript>
 </body>
 </html>
