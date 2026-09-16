@@ -10,10 +10,10 @@
 
     <meta
         name="description"
-        content="Direct browser-to-browser file transfer using WebRTC"
+        content="Browser-based utilities for direct file transfer and QR-code generation"
     >
 
-    <title>Quick File Transfer</title>
+    <title>Quick Transfer Tools</title>
 
     <style>
         * {
@@ -31,7 +31,7 @@
 
         .container {
             width: 100%;
-            max-width: 680px;
+            max-width: 820px;
             margin: 20px auto;
             padding: 36px;
             background: #ffffff;
@@ -44,7 +44,7 @@
             text-align: center;
         }
 
-        .icon {
+        .main-icon {
             margin-bottom: 12px;
             font-size: 50px;
         }
@@ -76,13 +76,13 @@
 
         .choice-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 18px;
         }
 
         .choice-button {
-            min-height: 160px;
-            padding: 24px;
+            min-height: 180px;
+            padding: 22px;
             font: inherit;
             color: #172033;
             background: #ffffff;
@@ -115,7 +115,7 @@
         .choice-title {
             display: block;
             margin-bottom: 8px;
-            font-size: 20px;
+            font-size: 19px;
             font-weight: bold;
         }
 
@@ -139,16 +139,44 @@
             display: block;
         }
 
-        .back-button {
-            margin-bottom: 18px;
-            padding: 10px 16px;
+        .back-button,
+        .primary-button,
+        .secondary-button {
+            padding: 11px 17px;
             font: inherit;
             font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .back-button {
+            margin-bottom: 18px;
             color: #24405f;
             background: #ffffff;
             border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            cursor: pointer;
+        }
+
+        .primary-button {
+            color: #ffffff;
+            background: #246bfd;
+            border: 1px solid #246bfd;
+        }
+
+        .primary-button:hover {
+            background: #1557d6;
+        }
+
+        .secondary-button {
+            color: #24405f;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+        }
+
+        .button-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 14px;
         }
 
         .status {
@@ -157,6 +185,97 @@
             background: #fff8dc;
             border: 1px solid #ead98c;
             border-radius: 8px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .text-input {
+            width: 100%;
+            min-height: 130px;
+            padding: 14px;
+            resize: vertical;
+            font: inherit;
+            line-height: 1.5;
+            color: #172033;
+            background: #ffffff;
+            border: 1px solid #bfc9d8;
+            border-radius: 9px;
+        }
+
+        .text-input:focus {
+            outline: 3px solid rgba(36, 107, 253, 0.15);
+            border-color: #246bfd;
+        }
+
+        .character-count {
+            margin-top: 6px;
+            font-size: 13px;
+            text-align: right;
+            color: #667085;
+        }
+
+        .message {
+            display: none;
+            margin-top: 16px;
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        .message.error {
+            display: block;
+            color: #8a1c1c;
+            background: #fff0f0;
+            border: 1px solid #e3aaaa;
+        }
+
+        .message.success {
+            display: block;
+            color: #17632d;
+            background: #edf8ef;
+            border: 1px solid #b9dfc0;
+        }
+
+        .qr-result {
+            display: none;
+            margin-top: 24px;
+            padding: 24px;
+            text-align: center;
+            background: #ffffff;
+            border: 1px solid #dce4f1;
+            border-radius: 12px;
+        }
+
+        .qr-result.active {
+            display: block;
+        }
+
+        #qrCanvas {
+            display: block;
+            width: min(100%, 320px);
+            height: auto;
+            margin: 0 auto 18px;
+            image-rendering: pixelated;
+            border: 12px solid #ffffff;
+            box-shadow: 0 4px 18px rgba(23, 32, 51, 0.14);
+        }
+
+        .qr-note {
+            margin: 10px 0 0;
+            font-size: 13px;
+        }
+
+        @media (max-width: 760px) {
+            .choice-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .choice-button {
+                min-height: 135px;
+            }
         }
 
         @media (max-width: 600px) {
@@ -173,12 +292,13 @@
                 font-size: 27px;
             }
 
-            .choice-grid {
-                grid-template-columns: 1fr;
+            .button-row {
+                flex-direction: column;
             }
 
-            .choice-button {
-                min-height: 135px;
+            .primary-button,
+            .secondary-button {
+                width: 100%;
             }
         }
     </style>
@@ -187,17 +307,18 @@
 <body>
     <main class="container">
         <header class="header">
-            <div class="icon" aria-hidden="true">⇄</div>
+            <div class="main-icon" aria-hidden="true">⇄</div>
 
-            <h1>Quick File Transfer</h1>
+            <h1>Quick Transfer Tools</h1>
 
             <p>
-                Transfer a file directly between two browsers using WebRTC.
+                Browser-based utilities for file transfer and QR-code
+                generation.
             </p>
 
             <div class="privacy-note">
-                Files are not uploaded to or permanently stored by this website.
-                Both devices must remain online during the transfer.
+                Text entered in the QR-code generator is processed locally
+                inside the browser and is not uploaded by this website.
             </div>
         </header>
 
@@ -209,7 +330,11 @@
                     onclick="showPanel('senderPanel')"
                 >
                     <span class="choice-icon" aria-hidden="true">↑</span>
-                    <span class="choice-title">Send a File</span>
+
+                    <span class="choice-title">
+                        Send a File
+                    </span>
+
                     <span class="choice-description">
                         Select a file and create a connection offer.
                     </span>
@@ -221,9 +346,29 @@
                     onclick="showPanel('receiverPanel')"
                 >
                     <span class="choice-icon" aria-hidden="true">↓</span>
-                    <span class="choice-title">Receive a File</span>
+
+                    <span class="choice-title">
+                        Receive a File
+                    </span>
+
                     <span class="choice-description">
                         Enter a connection offer from the sender.
+                    </span>
+                </button>
+
+                <button
+                    class="choice-button"
+                    type="button"
+                    onclick="showPanel('qrPanel')"
+                >
+                    <span class="choice-icon" aria-hidden="true">▦</span>
+
+                    <span class="choice-title">
+                        Generate QR Code
+                    </span>
+
+                    <span class="choice-description">
+                        Create a QR code for ordinary text or a website link.
                     </span>
                 </button>
             </div>
@@ -241,7 +386,8 @@
             <h2>Send a File</h2>
 
             <div class="status">
-                The file selection and WebRTC controls will be added next.
+                File transfer is currently disabled. No file will be uploaded
+                or transferred.
             </div>
         </section>
 
@@ -257,26 +403,211 @@
             <h2>Receive a File</h2>
 
             <div class="status">
-                The connection and download controls will be added next.
+                File transfer is currently disabled. No connection will be
+                created.
+            </div>
+        </section>
+
+        <section id="qrPanel" class="panel">
+            <button
+                class="back-button"
+                type="button"
+                onclick="showChoices()"
+            >
+                ← Back
+            </button>
+
+            <h2>Generate QR Code</h2>
+
+            <p>
+                Enter ordinary text or a complete website link. For website
+                links, include <strong>https://</strong>.
+            </p>
+
+            <label class="form-label" for="qrText">
+                Text or link
+            </label>
+
+            <textarea
+                id="qrText"
+                class="text-input"
+                maxlength="1000"
+                placeholder="Example: https://github.com"
+                oninput="updateCharacterCount()"
+            ></textarea>
+
+            <div id="characterCount" class="character-count">
+                0 / 1000 characters
+            </div>
+
+            <div class="button-row">
+                <button
+                    class="primary-button"
+                    type="button"
+                    onclick="generateQrCode()"
+                >
+                    Generate QR Code
+                </button>
+
+                <button
+                    class="secondary-button"
+                    type="button"
+                    onclick="clearQrCode()"
+                >
+                    Clear
+                </button>
+            </div>
+
+            <div
+                id="qrMessage"
+                class="message"
+                role="status"
+                aria-live="polite"
+            ></div>
+
+            <div id="qrResult" class="qr-result">
+                <canvas
+                    id="qrCanvas"
+                    width="320"
+                    height="320"
+                    aria-label="Generated QR code"
+                ></canvas>
+
+                <div class="button-row">
+                    <button
+                        class="primary-button"
+                        type="button"
+                        onclick="downloadQrCode()"
+                    >
+                        Download QR Code
+                    </button>
+                </div>
+
+                <p class="qr-note">
+                    Verify the QR code by scanning it before sharing.
+                </p>
             </div>
         </section>
     </main>
 
     <script>
+        const panelIds = [
+            "senderPanel",
+            "receiverPanel",
+            "qrPanel"
+        ];
+
         function showPanel(panelId) {
             document.getElementById("choiceSection").style.display = "none";
 
-            document.getElementById("senderPanel").classList.remove("active");
-            document.getElementById("receiverPanel").classList.remove("active");
+            panelIds.forEach(function (id) {
+                document.getElementById(id).classList.remove("active");
+            });
 
             document.getElementById(panelId).classList.add("active");
         }
 
         function showChoices() {
-            document.getElementById("senderPanel").classList.remove("active");
-            document.getElementById("receiverPanel").classList.remove("active");
+            panelIds.forEach(function (id) {
+                document.getElementById(id).classList.remove("active");
+            });
 
             document.getElementById("choiceSection").style.display = "block";
+        }
+
+        function updateCharacterCount() {
+            const text = document.getElementById("qrText").value;
+            const counter = document.getElementById("characterCount");
+
+            counter.textContent = text.length + " / 1000 characters";
+        }
+
+        function showMessage(message, type) {
+            const messageBox = document.getElementById("qrMessage");
+
+            messageBox.textContent = message;
+            messageBox.className = "message " + type;
+        }
+
+        function clearMessage() {
+            const messageBox = document.getElementById("qrMessage");
+
+            messageBox.textContent = "";
+            messageBox.className = "message";
+        }
+
+        async function generateQrCode() {
+            const text = document.getElementById("qrText").value.trim();
+            const result = document.getElementById("qrResult");
+
+            clearMessage();
+            result.classList.remove("active");
+
+            if (!text) {
+                showMessage(
+                    "Enter some text or a website link first.",
+                    "error"
+                );
+
+                return;
+            }
+
+            if (!("BarcodeDetector" in window)) {
+                showMessage(
+                    "This browser does not provide the required built-in " +
+                    "QR-code feature. Try the latest version of Chrome or Edge.",
+                    "error"
+                );
+
+                return;
+            }
+
+            try {
+                const supportedFormats =
+                    await BarcodeDetector.getSupportedFormats();
+
+                if (!supportedFormats.includes("qr_code")) {
+                    showMessage(
+                        "QR-code generation is not supported by this browser.",
+                        "error"
+                    );
+
+                    return;
+                }
+
+                /*
+                 * BarcodeDetector can read QR codes but cannot create them.
+                 * The next project step will add the QR encoder directly
+                 * to this repository without using an external API.
+                 */
+                showMessage(
+                    "The QR-code interface is ready. The local QR encoder " +
+                    "will be added in the next step.",
+                    "success"
+                );
+            } catch (error) {
+                showMessage(
+                    "The browser could not initialize the QR-code feature.",
+                    "error"
+                );
+            }
+        }
+
+        function clearQrCode() {
+            document.getElementById("qrText").value = "";
+            document.getElementById("qrResult").classList.remove("active");
+
+            clearMessage();
+            updateCharacterCount();
+        }
+
+        function downloadQrCode() {
+            const canvas = document.getElementById("qrCanvas");
+            const downloadLink = document.createElement("a");
+
+            downloadLink.download = "qr-code.png";
+            downloadLink.href = canvas.toDataURL("image/png");
+            downloadLink.click();
         }
     </script>
 </body>
