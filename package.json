@@ -2,12 +2,14 @@
   "name": "qr-generator",
   "version": "1.0.0",
   "private": true,
-  "description": "Browser-based QR-code and temporary file-transfer tools",
+  "description": "QR-code generator and browser-to-browser file-transfer tool",
   "type": "module",
   "scripts": {
     "build": "vite build"
   },
   "dependencies": {
+    "@zxing/browser": "^0.2.1",
+    "pako": "^2.1.0",
     "qrcode": "^1.5.4"
   },
   "devDependencies": {
