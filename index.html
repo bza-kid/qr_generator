@@ -2,23 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <meta
-        name="description"
-        content="QR-code generator and browser-to-browser file-transfer tool"
-    >
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="QR-code generator and browser-to-browser file-transfer tool">
     <title>Quick Transfer Tools</title>
 
     <style>
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
         body {
             margin: 0;
@@ -29,11 +18,7 @@
             background: #f3f6fb;
         }
 
-        button,
-        input,
-        textarea {
-            font: inherit;
-        }
+        button, input, textarea { font: inherit; }
 
         .container {
             width: 100%;
@@ -45,35 +30,12 @@
             box-shadow: 0 12px 35px rgba(23, 32, 51, 0.12);
         }
 
-        .header {
-            margin-bottom: 30px;
-            text-align: center;
-        }
-
-        .main-icon {
-            margin-bottom: 12px;
-            font-size: 50px;
-        }
-
-        h1 {
-            margin: 0 0 12px;
-            font-size: 32px;
-        }
-
-        h2 {
-            margin: 0 0 12px;
-            font-size: 25px;
-        }
-
-        h3 {
-            margin: 24px 0 10px;
-            font-size: 19px;
-        }
-
-        p {
-            line-height: 1.6;
-            color: #566074;
-        }
+        .header { margin-bottom: 30px; text-align: center; }
+        .main-icon { margin-bottom: 12px; font-size: 50px; }
+        h1 { margin: 0 0 12px; font-size: 32px; }
+        h2 { margin: 0 0 12px; font-size: 25px; }
+        h3 { margin: 24px 0 10px; font-size: 19px; }
+        p { line-height: 1.6; color: #566074; }
 
         .privacy-note {
             margin-top: 18px;
@@ -99,10 +61,7 @@
             border: 2px solid #d9e0ec;
             border-radius: 14px;
             cursor: pointer;
-            transition:
-                transform 0.2s,
-                border-color 0.2s,
-                box-shadow 0.2s;
+            transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
         }
 
         .choice-button:hover {
@@ -119,25 +78,9 @@
             outline-offset: 2px;
         }
 
-        .choice-icon {
-            display: block;
-            margin-bottom: 14px;
-            font-size: 38px;
-        }
-
-        .choice-title {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 19px;
-            font-weight: bold;
-        }
-
-        .choice-description {
-            display: block;
-            font-size: 14px;
-            line-height: 1.5;
-            color: #667085;
-        }
+        .choice-icon { display: block; margin-bottom: 14px; font-size: 38px; }
+        .choice-title { display: block; margin-bottom: 8px; font-size: 19px; font-weight: bold; }
+        .choice-description { display: block; font-size: 14px; line-height: 1.5; color: #667085; }
 
         .panel {
             display: none;
@@ -148,9 +91,7 @@
             border-radius: 14px;
         }
 
-        .panel.active {
-            display: block;
-        }
+        .panel.active { display: block; }
 
         .back-button,
         .primary-button,
@@ -162,8 +103,7 @@
             cursor: pointer;
         }
 
-        .back-button,
-        .secondary-button {
+        .back-button, .secondary-button {
             color: #24405f;
             background: #ffffff;
             border: 1px solid #cbd5e1;
@@ -181,18 +121,9 @@
             border: 1px solid #e3aaaa;
         }
 
-        .primary-button:hover {
-            background: #1557d6;
-        }
-
-        .back-button:hover,
-        .secondary-button:hover {
-            background: #f1f5f9;
-        }
-
-        .danger-button:hover {
-            background: #fff0f0;
-        }
+        .primary-button:hover { background: #1557d6; }
+        .back-button:hover, .secondary-button:hover { background: #f1f5f9; }
+        .danger-button:hover { background: #fff0f0; }
 
         button:disabled {
             color: #8a94a6;
@@ -201,30 +132,12 @@
             cursor: not-allowed;
         }
 
-        .button-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 16px;
-        }
+        .button-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+        .center-row { justify-content: center; }
+        .form-group { margin-bottom: 20px; }
+        .form-label { display: block; margin-bottom: 8px; font-weight: bold; }
 
-        .center-row {
-            justify-content: center;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-        }
-
-        .label-input,
-        .text-input,
-        .file-input {
+        .label-input, .text-input, .file-input {
             width: 100%;
             padding: 13px 14px;
             color: #172033;
@@ -233,24 +146,9 @@
             border-radius: 9px;
         }
 
-        .text-input {
-            min-height: 130px;
-            resize: vertical;
-            line-height: 1.5;
-        }
-
-        .field-note {
-            margin: 7px 0 0;
-            font-size: 13px;
-            color: #667085;
-        }
-
-        .character-count {
-            margin-top: 6px;
-            font-size: 13px;
-            text-align: right;
-            color: #667085;
-        }
+        .text-input { min-height: 130px; resize: vertical; line-height: 1.5; }
+        .field-note { margin: 7px 0 0; font-size: 13px; color: #667085; }
+        .character-count { margin-top: 6px; font-size: 13px; text-align: right; color: #667085; }
 
         .file-details {
             display: none;
@@ -262,14 +160,8 @@
             border-radius: 9px;
         }
 
-        .file-details.active {
-            display: block;
-        }
-
-        .file-details p {
-            margin: 4px 0;
-            overflow-wrap: anywhere;
-        }
+        .file-details.active { display: block; }
+        .file-details p { margin: 4px 0; overflow-wrap: anywhere; }
 
         .status {
             margin-top: 18px;
@@ -280,44 +172,13 @@
             border-radius: 9px;
         }
 
-        .status.waiting {
-            color: #67530b;
-            background: #fff8dc;
-            border-color: #ead98c;
-        }
+        .status.waiting { color: #67530b; background: #fff8dc; border-color: #ead98c; }
+        .status.success { color: #17632d; background: #edf8ef; border-color: #b9dfc0; }
+        .status.error { color: #8a1c1c; background: #fff0f0; border-color: #e3aaaa; }
 
-        .status.success {
-            color: #17632d;
-            background: #edf8ef;
-            border-color: #b9dfc0;
-        }
-
-        .status.error {
-            color: #8a1c1c;
-            background: #fff0f0;
-            border-color: #e3aaaa;
-        }
-
-        .message {
-            display: none;
-            margin-top: 16px;
-            padding: 12px;
-            border-radius: 8px;
-        }
-
-        .message.error {
-            display: block;
-            color: #8a1c1c;
-            background: #fff0f0;
-            border: 1px solid #e3aaaa;
-        }
-
-        .message.success {
-            display: block;
-            color: #17632d;
-            background: #edf8ef;
-            border: 1px solid #b9dfc0;
-        }
+        .message { display: none; margin-top: 16px; padding: 12px; border-radius: 8px; }
+        .message.error { display: block; color: #8a1c1c; background: #fff0f0; border: 1px solid #e3aaaa; }
+        .message.success { display: block; color: #17632d; background: #edf8ef; border: 1px solid #b9dfc0; }
 
         .qr-card {
             display: none;
@@ -329,9 +190,7 @@
             border-radius: 12px;
         }
 
-        .qr-card.active {
-            display: block;
-        }
+        .qr-card.active { display: block; }
 
         .qr-canvas {
             display: block;
@@ -344,24 +203,10 @@
             box-shadow: 0 4px 18px rgba(23, 32, 51, 0.14);
         }
 
-        #textQrCanvas {
-            width: min(100%, 320px);
-        }
-
-        .qr-note {
-            margin: 18px 0 0;
-            font-size: 13px;
-        }
-
-        .step-list {
-            padding-left: 22px;
-            color: #566074;
-        }
-
-        .step-list li {
-            margin-bottom: 8px;
-            line-height: 1.5;
-        }
+        #textQrCanvas { width: min(100%, 320px); }
+        .qr-note { margin: 18px 0 0; font-size: 13px; }
+        .step-list { padding-left: 22px; color: #566074; }
+        .step-list li { margin-bottom: 8px; line-height: 1.5; }
 
         .scanner-overlay {
             display: none;
@@ -374,9 +219,7 @@
             background: rgba(12, 18, 30, 0.82);
         }
 
-        .scanner-overlay.active {
-            display: flex;
-        }
+        .scanner-overlay.active { display: flex; }
 
         .scanner-dialog {
             width: 100%;
@@ -388,10 +231,6 @@
             border-radius: 16px;
         }
 
-        .scanner-dialog h2 {
-            margin-bottom: 8px;
-        }
-
         #scannerVideo {
             display: block;
             width: 100%;
@@ -401,15 +240,7 @@
             border-radius: 12px;
         }
 
-        .scanner-frame {
-            position: relative;
-        }
-
-        .scanner-hint {
-            margin: 12px 0 0;
-            font-size: 14px;
-            text-align: center;
-        }
+        .scanner-hint { margin: 12px 0 0; font-size: 14px; text-align: center; }
 
         .scanner-error {
             display: none;
@@ -421,9 +252,7 @@
             border-radius: 8px;
         }
 
-        .scanner-error.active {
-            display: block;
-        }
+        .scanner-error.active { display: block; }
 
         .divider {
             display: flex;
@@ -433,8 +262,7 @@
             color: #667085;
         }
 
-        .divider::before,
-        .divider::after {
+        .divider::before, .divider::after {
             content: "";
             flex: 1;
             height: 1px;
@@ -451,40 +279,17 @@
         }
 
         @media (max-width: 760px) {
-            .choice-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .choice-button {
-                min-height: 135px;
-            }
+            .choice-grid { grid-template-columns: 1fr; }
+            .choice-button { min-height: 135px; }
         }
 
         @media (max-width: 600px) {
-            body {
-                padding: 14px;
-            }
-
-            .container {
-                margin: 10px auto;
-                padding: 24px 18px;
-            }
-
-            h1 {
-                font-size: 27px;
-            }
-
-            .button-row {
-                flex-direction: column;
-            }
-
-            .button-row button {
-                width: 100%;
-            }
-
-            .panel {
-                padding: 18px;
-            }
+            body { padding: 14px; }
+            .container { margin: 10px auto; padding: 24px 18px; }
+            h1 { font-size: 27px; }
+            .button-row { flex-direction: column; }
+            .button-row button { width: 100%; }
+            .panel { padding: 18px; }
         }
     </style>
 </head>
@@ -493,80 +298,38 @@
     <main class="container">
         <header class="header">
             <div class="main-icon" aria-hidden="true">⇄</div>
-
             <h1>Quick Transfer Tools</h1>
-
-            <p>
-                QR-based browser connection and text/link QR-code generation.
-            </p>
-
+            <p>QR-based browser connection and text/link QR-code generation.</p>
             <div class="privacy-note">
-                QR generation and WebRTC connection information are processed
-                inside the browser. The selected file is not uploaded to GitHub.
+                QR generation and WebRTC connection information are processed inside the browser.
+                The selected file is not uploaded to GitHub.
             </div>
         </header>
 
         <section id="choiceSection">
             <div class="choice-grid">
-                <button
-                    class="choice-button"
-                    type="button"
-                    onclick="showPanel('senderPanel')"
-                >
+                <button class="choice-button" type="button" onclick="showPanel('senderPanel')">
                     <span class="choice-icon" aria-hidden="true">↑</span>
-
-                    <span class="choice-title">
-                        Send a File
-                    </span>
-
-                    <span class="choice-description">
-                        Select a file and create a connection QR code.
-                    </span>
+                    <span class="choice-title">Send a File</span>
+                    <span class="choice-description">Select a file and create a connection QR code.</span>
                 </button>
 
-                <button
-                    class="choice-button"
-                    type="button"
-                    onclick="showPanel('receiverPanel')"
-                >
+                <button class="choice-button" type="button" onclick="showPanel('receiverPanel')">
                     <span class="choice-icon" aria-hidden="true">↓</span>
-
-                    <span class="choice-title">
-                        Receive a File
-                    </span>
-
-                    <span class="choice-description">
-                        Scan the sender QR and create an answer QR.
-                    </span>
+                    <span class="choice-title">Receive a File</span>
+                    <span class="choice-description">Scan the sender QR and create an answer QR.</span>
                 </button>
 
-                <button
-                    class="choice-button"
-                    type="button"
-                    onclick="showPanel('qrPanel')"
-                >
+                <button class="choice-button" type="button" onclick="showPanel('qrPanel')">
                     <span class="choice-icon" aria-hidden="true">▦</span>
-
-                    <span class="choice-title">
-                        Generate QR Code
-                    </span>
-
-                    <span class="choice-description">
-                        Create a labelled QR code for ordinary text or a link.
-                    </span>
+                    <span class="choice-title">Generate QR Code</span>
+                    <span class="choice-description">Create a labelled QR code for ordinary text or a link.</span>
                 </button>
             </div>
         </section>
 
         <section id="senderPanel" class="panel">
-            <button
-                class="back-button"
-                type="button"
-                onclick="showChoices()"
-            >
-                ← Back
-            </button>
-
+            <button class="back-button" type="button" onclick="showChoices()">← Back</button>
             <h2>Send a File</h2>
 
             <ol class="step-list">
@@ -577,34 +340,158 @@
             </ol>
 
             <div class="form-group">
-                <label class="form-label" for="sendFileInput">
-                    Select file
-                </label>
-
-                <input
-                    id="sendFileInput"
-                    class="file-input"
-                    type="file"
-                    onchange="handleFileSelection()"
-                >
-
+                <label class="form-label" for="sendFileInput">Select file</label>
+                <input id="sendFileInput" class="file-input" type="file" onchange="handleFileSelection()">
                 <p class="field-note">
                     Current test limit: 100 MB, equal to 100,000,000 bytes.
-                    The selected file will not be transferred in this stage.
+                    The selected file will not be transferred in this connection-test stage.
                 </p>
             </div>
 
             <div id="selectedFileDetails" class="file-details">
-                <p>
-                    <strong>File:</strong>
-                    <span id="selectedFileName"></span>
-                </p>
+                <p><strong>File:</strong> <span id="selectedFileName"></span></p>
+                <p><strong>Size:</strong> <span id="selectedFileSize"></span></p>
+                <p><strong>Type:</strong> <span id="selectedFileType"></span></p>
+            </div>
 
-                <p>
-                    <strong>Size:</strong>
-                    <span id="selectedFileSize"></span>
-                </p>
+            <div class="button-row">
+                <button id="createOfferButton" class="primary-button" type="button" onclick="createSenderOffer()" disabled>
+                    Create Connection QR
+                </button>
+                <button id="scanAnswerButton" class="secondary-button" type="button" onclick="startAnswerScanner()" disabled>
+                    Scan Receiver Answer QR
+                </button>
+                <button class="danger-button" type="button" onclick="resetSenderSession()">Reset</button>
+            </div>
 
-                <p>
-                    <strong>Type:</strong>
-                    <span id
+            <div id="senderStatus" class="status waiting" role="status" aria-live="polite">
+                Select a file to begin.
+            </div>
+
+            <div id="senderOfferCard" class="qr-card">
+                <h3>Sender Offer QR</h3>
+                <canvas id="senderOfferQr" class="qr-canvas" width="420" height="420" aria-label="Sender WebRTC offer QR code"></canvas>
+                <p class="qr-note">
+                    Keep this page open. The receiver must scan this QR code and then show an Answer QR.
+                </p>
+            </div>
+        </section>
+
+        <section id="receiverPanel" class="panel">
+            <button class="back-button" type="button" onclick="showChoices()">← Back</button>
+            <h2>Receive a File</h2>
+
+            <ol class="step-list">
+                <li>Scan the Offer QR displayed by the sender.</li>
+                <li>Wait while the Answer QR is generated.</li>
+                <li>Show the Answer QR to the sender.</li>
+                <li>Wait until both devices show Connected.</li>
+            </ol>
+
+            <div class="button-row">
+                <button class="primary-button" type="button" onclick="startOfferScanner()">Scan Sender Offer QR</button>
+                <button class="danger-button" type="button" onclick="resetReceiverSession()">Reset</button>
+            </div>
+
+            <div id="receiverStatus" class="status waiting" role="status" aria-live="polite">
+                Scan the Sender Offer QR to begin.
+            </div>
+
+            <div id="receiverAnswerCard" class="qr-card">
+                <h3>Receiver Answer QR</h3>
+                <canvas id="receiverAnswerQr" class="qr-canvas" width="420" height="420" aria-label="Receiver WebRTC answer QR code"></canvas>
+                <p class="qr-note">
+                    Show this QR code to the sender. The sender must scan it to complete the connection.
+                </p>
+            </div>
+
+            <div class="warning-box">
+                This stage tests the WebRTC connection only. The receiver will not receive or download the selected file yet.
+            </div>
+        </section>
+
+        <section id="qrPanel" class="panel">
+            <button class="back-button" type="button" onclick="showChoices()">← Back</button>
+            <h2>Generate Text or Link QR Code</h2>
+            <p>Enter a short label and the text or link that must be encoded.</p>
+
+            <div class="form-group">
+                <label class="form-label" for="qrLabel">QR code label</label>
+                <input id="qrLabel" class="label-input" type="text" maxlength="80" placeholder="Example: Project meeting link">
+                <p class="field-note">
+                    The label will appear below the QR code in the downloaded PNG image.
+                </p>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="qrText">Text or link</label>
+                <textarea id="qrText" class="text-input" maxlength="1000" placeholder="Example: https://github.com" oninput="updateCharacterCount()"></textarea>
+                <div id="characterCount" class="character-count">0 / 1000 characters</div>
+            </div>
+
+            <div class="button-row">
+                <button class="primary-button" type="button" onclick="generateTextQrCode()">Generate QR Code</button>
+                <button class="secondary-button" type="button" onclick="clearTextQrCode()">Clear</button>
+            </div>
+
+            <div id="qrMessage" class="message" role="status" aria-live="polite"></div>
+
+            <div id="textQrResult" class="qr-card">
+                <canvas id="textQrCanvas" class="qr-canvas" width="320" height="320" aria-label="Generated text or link QR code"></canvas>
+                <div class="button-row center-row">
+                    <button class="primary-button" type="button" onclick="downloadTextQrCode()">
+                        Download Labelled QR Code
+                    </button>
+                </div>
+                <p class="qr-note">The downloaded image contains the QR code and its identifying label.</p>
+            </div>
+        </section>
+    </main>
+
+    <div id="scannerOverlay" class="scanner-overlay" role="dialog" aria-modal="true" aria-labelledby="scannerTitle">
+        <div class="scanner-dialog">
+            <h2 id="scannerTitle">Scan QR Code</h2>
+            <p id="scannerInstructions">Point the camera at the QR code shown on the other device.</p>
+            <video id="scannerVideo" playsinline muted></video>
+            <p class="scanner-hint">Hold the QR code steady and ensure adequate lighting.</p>
+
+            <div class="divider">or</div>
+
+            <div class="form-group">
+                <label class="form-label" for="scannerImageInput">Select a QR-code screenshot</label>
+                <input id="scannerImageInput" class="file-input" type="file" accept="image/*" onchange="scanQrImageFile()">
+            </div>
+
+            <div id="scannerError" class="scanner-error" role="alert"></div>
+
+            <div class="button-row">
+                <button class="danger-button" type="button" onclick="stopQrScanner()">Cancel Scanner</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation fallback loads immediately, even if app.js has an error. -->
+    <script>
+        window.showPanel = function (panelId) {
+            document.getElementById("choiceSection").style.display = "none";
+            document.getElementById("senderPanel").classList.remove("active");
+            document.getElementById("receiverPanel").classList.remove("active");
+            document.getElementById("qrPanel").classList.remove("active");
+            document.getElementById(panelId).classList.add("active");
+        };
+
+        window.showChoices = function () {
+            document.getElementById("senderPanel").classList.remove("active");
+            document.getElementById("receiverPanel").classList.remove("active");
+            document.getElementById("qrPanel").classList.remove("active");
+            document.getElementById("choiceSection").style.display = "block";
+
+            if (typeof window.stopQrScanner === "function") {
+                window.stopQrScanner();
+            }
+        };
+    </script>
+
+    <script type="module" src="./app.js"></script>
+</body>
+</html>
