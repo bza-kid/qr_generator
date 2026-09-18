@@ -4,19 +4,16 @@ import { BrowserQRCodeReader } from "@zxing/browser";
 
 const MAX_FILE_SIZE = 100_000_000;
 const QR_PREFIX = "QFT1:";
-const QR_SIZE = 420;
+const DISPLAY_QR_SIZE = 420;
+const DOWNLOAD_QR_SIZE = 900;
 
-const panelIds = [
-    "senderPanel",
-    "receiverPanel",
-    "qrPanel"
-];
+const panelIds = ["senderPanel", "receiverPanel", "qrPanel"];
 
 let selectedFile = null;
+let senderOfferQrPayload = null;
 
 let senderPeerConnection = null;
 let senderDataChannel = null;
-
 let receiverPeerConnection = null;
 let receiverDataChannel = null;
 
@@ -26,20 +23,19 @@ let scannerMode = null;
 let scannerCompleted = false;
 
 /*
- * No external STUN or TURN server is configured in this stage.
- * This first connection test is intended for two personal devices
- * on the same personal network.
+ * No STUN or TURN server is configured in this connection-test version.
+ * Test first with two personal devices on the same personal network.
  */
 const rtcConfiguration = {
     iceServers: []
 };
 
-/* ---------------------------------------------------------------
+/* --------------------------------------------------------------------------
    General panel controls
----------------------------------------------------------------- */
+---------------------------------------------------------------------------- */
 
 window.showPanel = function (panelId) {
-    window.stopQrScanner();
+    stopQrScannerInternal();
 
     document.getElementById("choiceSection").style.display = "none";
 
@@ -54,7 +50,7 @@ window.showChoices = function () {
     const qrPanelWasActive =
         document.getElementById("qrPanel").classList.contains("active");
 
-    window.stopQrScanner();
+    stopQrScannerInternal();
 
     panelIds.forEach(function (id) {
         document.getElementById(id).classList.remove("active");
@@ -63,13 +59,13 @@ window.showChoices = function () {
     document.getElementById("choiceSection").style.display = "block";
 
     if (qrPanelWasActive) {
-        window.clearTextQrCode();
+        clearTextQrCodeInternal();
     }
 };
 
-/* ---------------------------------------------------------------
+/* --------------------------------------------------------------------------
    Sender file selection
----------------------------------------------------------------- */
+---------------------------------------------------------------------------- */
 
 window.handleFileSelection = function () {
     const input = document.getElementById("sendFileInput");
@@ -82,13 +78,7 @@ window.handleFileSelection = function () {
         selectedFile = null;
         details.classList.remove("active");
         createButton.disabled = true;
-
-        setStatus(
-            "senderStatus",
-            "Select a file to begin.",
-            "waiting"
-        );
-
+        setStatus("senderStatus", "Select a file to begin.", "waiting");
         return;
     }
 
@@ -99,24 +89,19 @@ window.handleFileSelection = function () {
         input.value = "";
         details.classList.remove("active");
         createButton.disabled = true;
-
         setStatus(
             "senderStatus",
             "The selected file exceeds the 100 MB limit.",
             "error"
         );
-
         return;
     }
 
     selectedFile = file;
 
-    document.getElementById("selectedFileName").textContent =
-        file.name;
-
+    document.getElementById("selectedFileName").textContent = file.name;
     document.getElementById("selectedFileSize").textContent =
         formatFileSize(file.size);
-
     document.getElementById("selectedFileType").textContent =
         file.type || "Unknown file type";
 
@@ -142,18 +127,13 @@ function formatFileSize(bytes) {
     return `${(bytes / 1_000_000).toFixed(2)} MB`;
 }
 
-/* ---------------------------------------------------------------
+/* --------------------------------------------------------------------------
    Sender WebRTC offer
----------------------------------------------------------------- */
+---------------------------------------------------------------------------- */
 
 window.createSenderOffer = async function () {
     if (!selectedFile) {
-        setStatus(
-            "senderStatus",
-            "Select a valid file first.",
-            "error"
-        );
-
+        setStatus("senderStatus", "Select a valid file first.", "error");
         return;
     }
 
@@ -166,45 +146,31 @@ window.createSenderOffer = async function () {
             "waiting"
         );
 
-        senderPeerConnection =
-            new RTCPeerConnection(rtcConfiguration);
-
+        senderPeerConnection = new RTCPeerConnection(rtcConfiguration);
         configureSenderPeerConnection(senderPeerConnection);
 
-        senderDataChannel =
-            senderPeerConnection.createDataChannel(
-                "quick-file-transfer",
-                {
-                    ordered: true
-                }
-            );
-
+        senderDataChannel = senderPeerConnection.createDataChannel(
+            "quick-file-transfer",
+            { ordered: true }
+        );
         configureSenderDataChannel(senderDataChannel);
 
-        const offer =
-            await senderPeerConnection.createOffer();
-
+        const offer = await senderPeerConnection.createOffer();
         await senderPeerConnection.setLocalDescription(offer);
         await waitForIceGathering(senderPeerConnection);
 
         const payload = {
             version: 1,
             role: "offer",
-            description:
-                senderPeerConnection.localDescription.toJSON()
+            description: senderPeerConnection.localDescription.toJSON()
         };
 
         const encodedOffer = encodeSignal(payload);
+        senderOfferQrPayload = encodedOffer;
 
-        await drawConnectionQr(
-            "senderOfferQr",
-            encodedOffer
-        );
+        await drawConnectionQr("senderOfferQr", encodedOffer);
 
-        document
-            .getElementById("senderOfferCard")
-            .classList.add("active");
-
+        document.getElementById("senderOfferCard").classList.add("active");
         document.getElementById("scanAnswerButton").disabled = false;
         document.getElementById("createOfferButton").disabled = true;
 
@@ -215,7 +181,6 @@ window.createSenderOffer = async function () {
         );
     } catch (error) {
         console.error("Offer creation failed:", error);
-
         setStatus(
             "senderStatus",
             createReadableError(
@@ -224,30 +189,18 @@ window.createSenderOffer = async function () {
             ),
             "error"
         );
-
         resetSenderConnectionOnly();
     }
 };
 
 function configureSenderPeerConnection(peerConnection) {
-    peerConnection.addEventListener(
-        "connectionstatechange",
-        function () {
-            updateSenderConnectionState(
-                peerConnection.connectionState
-            );
-        }
-    );
+    peerConnection.addEventListener("connectionstatechange", function () {
+        updateSenderConnectionState(peerConnection.connectionState);
+    });
 
-    peerConnection.addEventListener(
-        "iceconnectionstatechange",
-        function () {
-            console.log(
-                "Sender ICE state:",
-                peerConnection.iceConnectionState
-            );
-        }
-    );
+    peerConnection.addEventListener("iceconnectionstatechange", function () {
+        console.log("Sender ICE state:", peerConnection.iceConnectionState);
+    });
 }
 
 function configureSenderDataChannel(dataChannel) {
@@ -270,22 +223,13 @@ function configureSenderDataChannel(dataChannel) {
 
     dataChannel.addEventListener("close", function () {
         if (senderPeerConnection) {
-            setStatus(
-                "senderStatus",
-                "The connection was closed.",
-                "waiting"
-            );
+            setStatus("senderStatus", "The connection was closed.", "waiting");
         }
     });
 
     dataChannel.addEventListener("error", function (event) {
         console.error("Sender data channel error:", event);
-
-        setStatus(
-            "senderStatus",
-            "A DataChannel error occurred.",
-            "error"
-        );
+        setStatus("senderStatus", "A DataChannel error occurred.", "error");
     });
 }
 
@@ -298,52 +242,187 @@ function updateSenderConnectionState(state) {
             "Connected. The connection test was successful.",
             "success"
         );
-
-        return;
-    }
-
-    if (state === "connecting") {
-        setStatus(
-            "senderStatus",
-            "Connecting to the receiver...",
-            "waiting"
-        );
-
-        return;
-    }
-
-    if (state === "failed") {
+    } else if (state === "connecting") {
+        setStatus("senderStatus", "Connecting to the receiver...", "waiting");
+    } else if (state === "failed") {
         setStatus(
             "senderStatus",
             "Connection failed. Reset both devices and try again.",
             "error"
         );
-
-        return;
-    }
-
-    if (state === "disconnected") {
-        setStatus(
-            "senderStatus",
-            "The receiver disconnected.",
-            "error"
-        );
-
-        return;
-    }
-
-    if (state === "closed") {
-        setStatus(
-            "senderStatus",
-            "The sender session is closed.",
-            "waiting"
-        );
+    } else if (state === "disconnected") {
+        setStatus("senderStatus", "The receiver disconnected.", "error");
+    } else if (state === "closed") {
+        setStatus("senderStatus", "The sender session is closed.", "waiting");
     }
 }
 
-/* ---------------------------------------------------------------
+/* --------------------------------------------------------------------------
+   Download sender Offer QR
+---------------------------------------------------------------------------- */
+
+window.downloadSenderOfferQr = async function () {
+    if (!selectedFile) {
+        setStatus(
+            "senderStatus",
+            "Select a file before downloading the connection QR.",
+            "error"
+        );
+        return;
+    }
+
+    if (!senderOfferQrPayload) {
+        setStatus(
+            "senderStatus",
+            "Create the Connection QR before downloading it.",
+            "error"
+        );
+        return;
+    }
+
+    try {
+        const imageWidth = 1000;
+        const imageHeight = 1150;
+        const qrPositionX = 50;
+        const qrPositionY = 35;
+
+        const highResolutionQr = document.createElement("canvas");
+
+        await QRCode.toCanvas(highResolutionQr, senderOfferQrPayload, {
+            errorCorrectionLevel: "L",
+            width: DOWNLOAD_QR_SIZE,
+            margin: 4,
+            color: {
+                dark: "#000000",
+                light: "#ffffff"
+            }
+        });
+
+        const downloadCanvas = document.createElement("canvas");
+        downloadCanvas.width = imageWidth;
+        downloadCanvas.height = imageHeight;
+
+        const context = downloadCanvas.getContext("2d");
+        context.fillStyle = "#ffffff";
+        context.fillRect(0, 0, imageWidth, imageHeight);
+        context.imageSmoothingEnabled = false;
+
+        context.drawImage(
+            highResolutionQr,
+            qrPositionX,
+            qrPositionY,
+            DOWNLOAD_QR_SIZE,
+            DOWNLOAD_QR_SIZE
+        );
+
+        context.fillStyle = "#172033";
+        context.textAlign = "center";
+        context.textBaseline = "top";
+        context.font = "bold 25px Arial, Helvetica, sans-serif";
+
+        context.fillText(
+            shortenFileName(selectedFile.name, 60),
+            imageWidth / 2,
+            975
+        );
+
+        context.fillStyle = "#566074";
+        context.font = "18px Arial, Helvetica, sans-serif";
+
+        context.fillText(
+            `File size: ${formatFileSize(selectedFile.size)}`,
+            imageWidth / 2,
+            1020
+        );
+        context.fillText(
+            "Quick Transfer connection QR",
+            imageWidth / 2,
+            1060
+        );
+        context.fillText(
+            "Keep the sender page open while connecting",
+            imageWidth / 2,
+            1095
+        );
+
+        downloadCanvas.toBlob(function (blob) {
+            if (!blob) {
+                setStatus(
+                    "senderStatus",
+                    "The connection QR could not be prepared.",
+                    "error"
+                );
+                return;
+            }
+
+            const objectUrl = URL.createObjectURL(blob);
+            const downloadLink = document.createElement("a");
+            const safeFileName = createConnectionQrFileName(selectedFile.name);
+
+            downloadLink.href = objectUrl;
+            downloadLink.download = `${safeFileName}-connection-qr.png`;
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            downloadLink.remove();
+
+            window.setTimeout(function () {
+                URL.revokeObjectURL(objectUrl);
+            }, 1000);
+
+            setStatus(
+                "senderStatus",
+                "High-resolution connection QR downloaded. Keep this sender page open.",
+                "success"
+            );
+        }, "image/png");
+    } catch (error) {
+        console.error("Connection QR download failed:", error);
+        setStatus(
+            "senderStatus",
+            "The connection QR could not be downloaded.",
+            "error"
+        );
+    }
+};
+
+function shortenFileName(fileName, maximumLength) {
+    if (fileName.length <= maximumLength) {
+        return fileName;
+    }
+
+    const extensionPosition = fileName.lastIndexOf(".");
+
+    if (extensionPosition <= 0) {
+        return `${fileName.substring(0, maximumLength - 3)}...`;
+    }
+
+    const extension = fileName.substring(extensionPosition);
+    const availableLength = maximumLength - extension.length - 3;
+
+    return `${fileName.substring(0, availableLength)}...${extension}`;
+}
+
+function createConnectionQrFileName(fileName) {
+    const lastDotPosition = fileName.lastIndexOf(".");
+    const nameWithoutExtension =
+        lastDotPosition > 0
+            ? fileName.substring(0, lastDotPosition)
+            : fileName;
+
+    const safeName = nameWithoutExtension
+        .replace(/[<>:"/\\|?*\u0000-\u001F]/g, "")
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/^-|-$/g, "")
+        .toLowerCase()
+        .substring(0, 50);
+
+    return safeName || "file";
+}
+
+/* --------------------------------------------------------------------------
    Receiver WebRTC answer
----------------------------------------------------------------- */
+---------------------------------------------------------------------------- */
 
 async function processOfferQr(qrText) {
     try {
@@ -354,44 +433,28 @@ async function processOfferQr(qrText) {
         );
 
         const payload = decodeSignal(qrText);
-
         validateSignalPayload(payload, "offer");
-
         resetReceiverConnectionOnly();
 
-        receiverPeerConnection =
-            new RTCPeerConnection(rtcConfiguration);
-
+        receiverPeerConnection = new RTCPeerConnection(rtcConfiguration);
         configureReceiverPeerConnection(receiverPeerConnection);
 
-        await receiverPeerConnection.setRemoteDescription(
-            payload.description
-        );
+        await receiverPeerConnection.setRemoteDescription(payload.description);
 
-        const answer =
-            await receiverPeerConnection.createAnswer();
-
+        const answer = await receiverPeerConnection.createAnswer();
         await receiverPeerConnection.setLocalDescription(answer);
         await waitForIceGathering(receiverPeerConnection);
 
         const answerPayload = {
             version: 1,
             role: "answer",
-            description:
-                receiverPeerConnection.localDescription.toJSON()
+            description: receiverPeerConnection.localDescription.toJSON()
         };
 
         const encodedAnswer = encodeSignal(answerPayload);
+        await drawConnectionQr("receiverAnswerQr", encodedAnswer);
 
-        await drawConnectionQr(
-            "receiverAnswerQr",
-            encodedAnswer
-        );
-
-        document
-            .getElementById("receiverAnswerCard")
-            .classList.add("active");
-
+        document.getElementById("receiverAnswerCard").classList.add("active");
         setStatus(
             "receiverStatus",
             "Answer QR created. Ask the sender to scan it.",
@@ -399,47 +462,28 @@ async function processOfferQr(qrText) {
         );
     } catch (error) {
         console.error("Offer processing failed:", error);
-
         setStatus(
             "receiverStatus",
-            createReadableError(
-                error,
-                "The sender QR could not be processed."
-            ),
+            createReadableError(error, "The sender QR could not be processed."),
             "error"
         );
-
         resetReceiverConnectionOnly();
     }
 }
 
 function configureReceiverPeerConnection(peerConnection) {
-    peerConnection.addEventListener(
-        "datachannel",
-        function (event) {
-            receiverDataChannel = event.channel;
-            configureReceiverDataChannel(receiverDataChannel);
-        }
-    );
+    peerConnection.addEventListener("datachannel", function (event) {
+        receiverDataChannel = event.channel;
+        configureReceiverDataChannel(receiverDataChannel);
+    });
 
-    peerConnection.addEventListener(
-        "connectionstatechange",
-        function () {
-            updateReceiverConnectionState(
-                peerConnection.connectionState
-            );
-        }
-    );
+    peerConnection.addEventListener("connectionstatechange", function () {
+        updateReceiverConnectionState(peerConnection.connectionState);
+    });
 
-    peerConnection.addEventListener(
-        "iceconnectionstatechange",
-        function () {
-            console.log(
-                "Receiver ICE state:",
-                peerConnection.iceConnectionState
-            );
-        }
-    );
+    peerConnection.addEventListener("iceconnectionstatechange", function () {
+        console.log("Receiver ICE state:", peerConnection.iceConnectionState);
+    });
 }
 
 function configureReceiverDataChannel(dataChannel) {
@@ -469,9 +513,7 @@ function configureReceiverDataChannel(dataChannel) {
                 );
             }
         } catch {
-            console.log(
-                "Receiver received a non-JSON text message."
-            );
+            console.log("Receiver received a non-JSON text message.");
         }
     });
 
@@ -487,12 +529,7 @@ function configureReceiverDataChannel(dataChannel) {
 
     dataChannel.addEventListener("error", function (event) {
         console.error("Receiver data channel error:", event);
-
-        setStatus(
-            "receiverStatus",
-            "A DataChannel error occurred.",
-            "error"
-        );
+        setStatus("receiverStatus", "A DataChannel error occurred.", "error");
     });
 }
 
@@ -505,52 +542,24 @@ function updateReceiverConnectionState(state) {
             "Connected. The connection test was successful.",
             "success"
         );
-
-        return;
-    }
-
-    if (state === "connecting") {
-        setStatus(
-            "receiverStatus",
-            "Connecting to the sender...",
-            "waiting"
-        );
-
-        return;
-    }
-
-    if (state === "failed") {
+    } else if (state === "connecting") {
+        setStatus("receiverStatus", "Connecting to the sender...", "waiting");
+    } else if (state === "failed") {
         setStatus(
             "receiverStatus",
             "Connection failed. Reset both devices and try again.",
             "error"
         );
-
-        return;
-    }
-
-    if (state === "disconnected") {
-        setStatus(
-            "receiverStatus",
-            "The sender disconnected.",
-            "error"
-        );
-
-        return;
-    }
-
-    if (state === "closed") {
-        setStatus(
-            "receiverStatus",
-            "The receiver session is closed.",
-            "waiting"
-        );
+    } else if (state === "disconnected") {
+        setStatus("receiverStatus", "The sender disconnected.", "error");
+    } else if (state === "closed") {
+        setStatus("receiverStatus", "The receiver session is closed.", "waiting");
     }
 }
 
-/* ---------------------------------------------------------------
+/* --------------------------------------------------------------------------
    Sender imports receiver answer
----------------------------------------------------------------- */
+---------------------------------------------------------------------------- */
 
 async function processAnswerQr(qrText) {
     if (!senderPeerConnection) {
@@ -561,7 +570,6 @@ async function processAnswerQr(qrText) {
 
     try {
         const payload = decodeSignal(qrText);
-
         validateSignalPayload(payload, "answer");
 
         setStatus(
@@ -570,12 +578,9 @@ async function processAnswerQr(qrText) {
             "waiting"
         );
 
-        await senderPeerConnection.setRemoteDescription(
-            payload.description
-        );
+        await senderPeerConnection.setRemoteDescription(payload.description);
     } catch (error) {
         console.error("Answer processing failed:", error);
-
         setStatus(
             "senderStatus",
             createReadableError(
@@ -584,14 +589,13 @@ async function processAnswerQr(qrText) {
             ),
             "error"
         );
-
         throw error;
     }
 }
 
-/* ---------------------------------------------------------------
+/* --------------------------------------------------------------------------
    ICE gathering
----------------------------------------------------------------- */
+---------------------------------------------------------------------------- */
 
 function waitForIceGathering(peerConnection) {
     if (peerConnection.iceGatheringState === "complete") {
@@ -604,25 +608,16 @@ function waitForIceGathering(peerConnection) {
                 "icegatheringstatechange",
                 handleStateChange
             );
-
-            reject(
-                new Error(
-                    "ICE gathering timed out. Reset and try again."
-                )
-            );
+            reject(new Error("ICE gathering timed out. Reset and try again."));
         }, 15_000);
 
         function handleStateChange() {
-            if (
-                peerConnection.iceGatheringState === "complete"
-            ) {
+            if (peerConnection.iceGatheringState === "complete") {
                 window.clearTimeout(timeout);
-
                 peerConnection.removeEventListener(
                     "icegatheringstatechange",
                     handleStateChange
                 );
-
                 resolve();
             }
         }
@@ -634,14 +629,13 @@ function waitForIceGathering(peerConnection) {
     });
 }
 
-/* ---------------------------------------------------------------
+/* --------------------------------------------------------------------------
    Connection QR encoding and decoding
----------------------------------------------------------------- */
+---------------------------------------------------------------------------- */
 
 function encodeSignal(payload) {
     const jsonText = JSON.stringify(payload);
     const compressed = pako.deflate(jsonText);
-
     return QR_PREFIX + bytesToBase64Url(compressed);
 }
 
@@ -650,23 +644,12 @@ function decodeSignal(encodedText) {
         typeof encodedText !== "string" ||
         !encodedText.startsWith(QR_PREFIX)
     ) {
-        throw new Error(
-            "This is not a Quick Transfer connection QR code."
-        );
+        throw new Error("This is not a Quick Transfer connection QR code.");
     }
 
-    const base64UrlText =
-        encodedText.substring(QR_PREFIX.length);
-
-    const compressedBytes =
-        base64UrlToBytes(base64UrlText);
-
-    const jsonText = pako.inflate(
-        compressedBytes,
-        {
-            to: "string"
-        }
-    );
+    const base64UrlText = encodedText.substring(QR_PREFIX.length);
+    const compressedBytes = base64UrlToBytes(base64UrlText);
+    const jsonText = pako.inflate(compressedBytes, { to: "string" });
 
     return JSON.parse(jsonText);
 }
@@ -675,16 +658,11 @@ function bytesToBase64Url(bytes) {
     let binaryText = "";
     const blockSize = 0x8000;
 
-    for (
-        let offset = 0;
-        offset < bytes.length;
-        offset += blockSize
-    ) {
+    for (let offset = 0; offset < bytes.length; offset += blockSize) {
         const block = bytes.subarray(
             offset,
             Math.min(offset + blockSize, bytes.length)
         );
-
         binaryText += String.fromCharCode(...block);
     }
 
@@ -706,7 +684,7 @@ function base64UrlToBytes(base64UrlText) {
     const binaryText = atob(base64Text);
     const bytes = new Uint8Array(binaryText.length);
 
-    for (let index = 0; index < binaryText.length; index++) {
+    for (let index = 0; index < binaryText.length; index += 1) {
         bytes[index] = binaryText.charCodeAt(index);
     }
 
@@ -719,15 +697,11 @@ function validateSignalPayload(payload, expectedRole) {
     }
 
     if (payload.version !== 1) {
-        throw new Error(
-            "The QR code uses an unsupported connection version."
-        );
+        throw new Error("The QR code uses an unsupported connection version.");
     }
 
     if (payload.role !== expectedRole) {
-        throw new Error(
-            `Expected a ${expectedRole} QR code.`
-        );
+        throw new Error(`Expected a ${expectedRole} QR code.`);
     }
 
     if (
@@ -747,18 +721,17 @@ async function drawConnectionQr(canvasId, encodedText) {
     try {
         await QRCode.toCanvas(canvas, encodedText, {
             errorCorrectionLevel: "L",
-            width: QR_SIZE,
-            margin: 2,
+            width: DISPLAY_QR_SIZE,
+            margin: 3,
             color: {
                 dark: "#000000",
                 light: "#ffffff"
             }
         });
     } catch (error) {
-        if (
-            String(error.message).toLowerCase().includes("too big") ||
-            String(error.message).toLowerCase().includes("too large")
-        ) {
+        const message = String(error && error.message).toLowerCase();
+
+        if (message.includes("too big") || message.includes("too large")) {
             throw new Error(
                 "The connection information is too large for one QR code."
             );
@@ -768,9 +741,9 @@ async function drawConnectionQr(canvasId, encodedText) {
     }
 }
 
-/* ---------------------------------------------------------------
+/* --------------------------------------------------------------------------
    QR camera and screenshot scanner
----------------------------------------------------------------- */
+---------------------------------------------------------------------------- */
 
 window.startOfferScanner = function () {
     startQrScanner("offer");
@@ -783,7 +756,6 @@ window.startAnswerScanner = function () {
             "Create the Sender Offer QR first.",
             "error"
         );
-
         return;
     }
 
@@ -791,7 +763,7 @@ window.startAnswerScanner = function () {
 };
 
 async function startQrScanner(mode) {
-    stopQrScanner();
+    stopQrScannerInternal();
 
     scannerMode = mode;
     scannerCompleted = false;
@@ -809,65 +781,48 @@ async function startQrScanner(mode) {
             ? "Point the camera at the Offer QR shown by the sender."
             : "Point the camera at the Answer QR shown by the receiver.";
 
-    document
-        .getElementById("scannerOverlay")
-        .classList.add("active");
+    document.getElementById("scannerOverlay").classList.add("active");
 
     try {
         scannerReader = new BrowserQRCodeReader();
 
-        scannerControls =
-            await scannerReader.decodeFromConstraints(
-                {
-                    video: {
-                        facingMode: {
-                            ideal: "environment"
-                        }
-                    },
-                    audio: false
+        scannerControls = await scannerReader.decodeFromConstraints(
+            {
+                video: {
+                    facingMode: { ideal: "environment" }
                 },
-                document.getElementById("scannerVideo"),
-                function (result, error, controls) {
-                    if (result && !scannerCompleted) {
-                        scannerCompleted = true;
+                audio: false
+            },
+            document.getElementById("scannerVideo"),
+            function (result, error, controls) {
+                if (result && !scannerCompleted) {
+                    scannerCompleted = true;
+                    const scannedText = result.getText();
+                    const completedMode = mode;
 
-                        const scannedText = result.getText();
+                    controls.stop();
+                    scannerControls = null;
+                    stopVideoTracks();
+                    closeScannerOverlay();
 
-                        controls.stop();
-                        scannerControls = null;
-
-                        closeScannerOverlay();
-
-                        handleScannedConnectionQr(
-                            scannedText,
-                            mode
-                        );
-                    }
-
-                    if (
-                        error &&
-                        error.name !== "NotFoundException"
-                    ) {
-                        console.debug(
-                            "QR scanning status:",
-                            error.name
-                        );
-                    }
+                    handleScannedConnectionQr(scannedText, completedMode);
                 }
-            );
+
+                if (error && error.name !== "NotFoundException") {
+                    console.debug("QR scanning status:", error.name);
+                }
+            }
+        );
     } catch (error) {
         console.error("Camera scanner failed:", error);
-
         showScannerError(
-            "The camera could not be started. Allow camera permission " +
-            "or select a QR-code screenshot below."
+            "The camera could not be started. Allow camera permission or select a QR-code screenshot below."
         );
     }
 }
 
 window.scanQrImageFile = async function () {
-    const input =
-        document.getElementById("scannerImageInput");
+    const input = document.getElementById("scannerImageInput");
 
     if (!input.files || input.files.length === 0) {
         return;
@@ -875,38 +830,27 @@ window.scanQrImageFile = async function () {
 
     const imageFile = input.files[0];
     const imageUrl = URL.createObjectURL(imageFile);
+    const activeMode = scannerMode;
 
     try {
         const imageReader = new BrowserQRCodeReader();
-        const result =
-            await imageReader.decodeFromImageUrl(imageUrl);
+        const result = await imageReader.decodeFromImageUrl(imageUrl);
+        const scannedText = result.getText();
 
         scannerCompleted = true;
-
-        const scannedText = result.getText();
-        const activeMode = scannerMode;
-
-        stopQrScanner();
-
-        await handleScannedConnectionQr(
-            scannedText,
-            activeMode
-        );
+        stopQrScannerInternal();
+        await handleScannedConnectionQr(scannedText, activeMode);
     } catch (error) {
         console.error("QR image decoding failed:", error);
-
         showScannerError(
-            "No readable QR code was found in the selected image."
+            "No readable QR code was found. Use the original high-resolution PNG and avoid compressed screenshots."
         );
     } finally {
         URL.revokeObjectURL(imageUrl);
     }
 };
 
-async function handleScannedConnectionQr(
-    scannedText,
-    mode
-) {
+async function handleScannedConnectionQr(scannedText, mode) {
     try {
         if (mode === "offer") {
             await processOfferQr(scannedText);
@@ -925,14 +869,15 @@ async function handleScannedConnectionQr(
 }
 
 window.stopQrScanner = function () {
+    stopQrScannerInternal();
+};
+
+function stopQrScannerInternal() {
     if (scannerControls) {
         try {
             scannerControls.stop();
         } catch (error) {
-            console.debug(
-                "Scanner was already stopped:",
-                error
-            );
+            console.debug("Scanner was already stopped:", error);
         }
     }
 
@@ -943,72 +888,60 @@ window.stopQrScanner = function () {
 
     stopVideoTracks();
     closeScannerOverlay();
-};
+}
 
 function stopVideoTracks() {
     const video = document.getElementById("scannerVideo");
 
-    if (video.srcObject) {
-        video.srcObject
-            .getTracks()
-            .forEach(function (track) {
-                track.stop();
-            });
-
+    if (video && video.srcObject) {
+        video.srcObject.getTracks().forEach(function (track) {
+            track.stop();
+        });
         video.srcObject = null;
     }
 }
 
 function closeScannerOverlay() {
-    document
-        .getElementById("scannerOverlay")
-        .classList.remove("active");
+    const overlay = document.getElementById("scannerOverlay");
+
+    if (overlay) {
+        overlay.classList.remove("active");
+    }
 
     clearScannerError();
 }
 
 function showScannerError(message) {
-    const errorBox =
-        document.getElementById("scannerError");
-
+    const errorBox = document.getElementById("scannerError");
     errorBox.textContent = message;
     errorBox.classList.add("active");
 }
 
 function clearScannerError() {
-    const errorBox =
-        document.getElementById("scannerError");
+    const errorBox = document.getElementById("scannerError");
 
-    errorBox.textContent = "";
-    errorBox.classList.remove("active");
+    if (errorBox) {
+        errorBox.textContent = "";
+        errorBox.classList.remove("active");
+    }
 }
 
-/* ---------------------------------------------------------------
+/* --------------------------------------------------------------------------
    Sender and receiver reset
----------------------------------------------------------------- */
+---------------------------------------------------------------------------- */
 
 window.resetSenderSession = function () {
-    stopQrScanner();
+    stopQrScannerInternal();
     resetSenderConnectionOnly();
 
     selectedFile = null;
-
     document.getElementById("sendFileInput").value = "";
-
-    document
-        .getElementById("selectedFileDetails")
-        .classList.remove("active");
-
+    document.getElementById("selectedFileDetails").classList.remove("active");
     document.getElementById("createOfferButton").disabled = true;
     document.getElementById("scanAnswerButton").disabled = true;
 
     clearCanvas("senderOfferQr");
-
-    setStatus(
-        "senderStatus",
-        "Select a file to begin.",
-        "waiting"
-    );
+    setStatus("senderStatus", "Select a file to begin.", "waiting");
 };
 
 function resetSenderConnectionOnly() {
@@ -1016,10 +949,7 @@ function resetSenderConnectionOnly() {
         try {
             senderDataChannel.close();
         } catch (error) {
-            console.debug(
-                "Sender data channel close error:",
-                error
-            );
+            console.debug("Sender data channel close error:", error);
         }
     }
 
@@ -1027,20 +957,15 @@ function resetSenderConnectionOnly() {
         try {
             senderPeerConnection.close();
         } catch (error) {
-            console.debug(
-                "Sender peer connection close error:",
-                error
-            );
+            console.debug("Sender peer connection close error:", error);
         }
     }
 
     senderDataChannel = null;
     senderPeerConnection = null;
+    senderOfferQrPayload = null;
 
-    document
-        .getElementById("senderOfferCard")
-        .classList.remove("active");
-
+    document.getElementById("senderOfferCard").classList.remove("active");
     document.getElementById("scanAnswerButton").disabled = true;
 
     if (selectedFile) {
@@ -1051,11 +976,9 @@ function resetSenderConnectionOnly() {
 }
 
 window.resetReceiverSession = function () {
-    stopQrScanner();
+    stopQrScannerInternal();
     resetReceiverConnectionOnly();
-
     clearCanvas("receiverAnswerQr");
-
     setStatus(
         "receiverStatus",
         "Scan the Sender Offer QR to begin.",
@@ -1068,10 +991,7 @@ function resetReceiverConnectionOnly() {
         try {
             receiverDataChannel.close();
         } catch (error) {
-            console.debug(
-                "Receiver data channel close error:",
-                error
-            );
+            console.debug("Receiver data channel close error:", error);
         }
     }
 
@@ -1079,31 +999,23 @@ function resetReceiverConnectionOnly() {
         try {
             receiverPeerConnection.close();
         } catch (error) {
-            console.debug(
-                "Receiver peer connection close error:",
-                error
-            );
+            console.debug("Receiver peer connection close error:", error);
         }
     }
 
     receiverDataChannel = null;
     receiverPeerConnection = null;
 
-    document
-        .getElementById("receiverAnswerCard")
-        .classList.remove("active");
-
+    document.getElementById("receiverAnswerCard").classList.remove("active");
     clearCanvas("receiverAnswerQr");
 }
 
-/* ---------------------------------------------------------------
+/* --------------------------------------------------------------------------
    Text and link QR generator
----------------------------------------------------------------- */
+---------------------------------------------------------------------------- */
 
 window.updateCharacterCount = function () {
-    const text =
-        document.getElementById("qrText").value;
-
+    const text = document.getElementById("qrText").value;
     document.getElementById("characterCount").textContent =
         `${text.length} / 1000 characters`;
 };
@@ -1111,21 +1023,15 @@ window.updateCharacterCount = function () {
 window.generateTextQrCode = async function () {
     const textBox = document.getElementById("qrText");
     const text = textBox.value.trim();
-    const result =
-        document.getElementById("textQrResult");
-    const canvas =
-        document.getElementById("textQrCanvas");
+    const result = document.getElementById("textQrResult");
+    const canvas = document.getElementById("textQrCanvas");
 
     clearQrMessage();
     result.classList.remove("active");
     clearCanvas("textQrCanvas");
 
     if (!text) {
-        showQrMessage(
-            "Enter some text or a website link first.",
-            "error"
-        );
-
+        showQrMessage("Enter some text or a website link first.", "error");
         textBox.focus();
         return;
     }
@@ -1142,17 +1048,12 @@ window.generateTextQrCode = async function () {
         });
 
         result.classList.add("active");
-
         showQrMessage(
             "QR code generated locally in this browser.",
             "success"
         );
     } catch (error) {
-        console.error(
-            "Text QR generation failed:",
-            error
-        );
-
+        console.error("Text QR generation failed:", error);
         showQrMessage(
             "The QR code could not be generated. Try shorter text.",
             "error"
@@ -1161,100 +1062,60 @@ window.generateTextQrCode = async function () {
 };
 
 window.clearTextQrCode = function () {
+    clearTextQrCodeInternal();
+};
+
+function clearTextQrCodeInternal() {
     document.getElementById("qrLabel").value = "";
     document.getElementById("qrText").value = "";
-
-    document
-        .getElementById("textQrResult")
-        .classList.remove("active");
+    document.getElementById("textQrResult").classList.remove("active");
 
     clearCanvas("textQrCanvas");
     clearQrMessage();
-    updateCharacterCount();
-};
+    window.updateCharacterCount();
+}
 
 window.downloadTextQrCode = function () {
-    const qrCanvas =
-        document.getElementById("textQrCanvas");
-
-    const result =
-        document.getElementById("textQrResult");
-
-    const labelInput =
-        document.getElementById("qrLabel");
-
-    const textInput =
-        document.getElementById("qrText");
+    const qrCanvas = document.getElementById("textQrCanvas");
+    const result = document.getElementById("textQrResult");
+    const labelInput = document.getElementById("qrLabel");
+    const textInput = document.getElementById("qrText");
 
     if (!result.classList.contains("active")) {
-        showQrMessage(
-            "Generate a QR code before downloading it.",
-            "error"
-        );
-
+        showQrMessage("Generate a QR code before downloading it.", "error");
         return;
     }
 
     const encodedContent = textInput.value.trim();
 
     if (!encodedContent) {
-        showQrMessage(
-            "The QR-code content is empty.",
-            "error"
-        );
-
+        showQrMessage("The QR-code content is empty.", "error");
         return;
     }
 
     const displayLabel =
-        labelInput.value.trim() ||
-        createDefaultLabel(encodedContent);
+        labelInput.value.trim() || createDefaultLabel(encodedContent);
 
-    createLabelledQrImage(
-        qrCanvas,
-        displayLabel,
-        encodedContent
-    );
+    createLabelledQrImage(qrCanvas, displayLabel, encodedContent);
 };
 
-function createLabelledQrImage(
-    qrCanvas,
-    displayLabel,
-    encodedContent
-) {
+function createLabelledQrImage(qrCanvas, displayLabel, encodedContent) {
     const imageWidth = 500;
     const imageHeight = 600;
     const qrSize = 400;
-
-    const downloadCanvas =
-        document.createElement("canvas");
-
-    const context =
-        downloadCanvas.getContext("2d");
+    const downloadCanvas = document.createElement("canvas");
+    const context = downloadCanvas.getContext("2d");
 
     downloadCanvas.width = imageWidth;
     downloadCanvas.height = imageHeight;
 
     context.fillStyle = "#ffffff";
-
-    context.fillRect(
-        0,
-        0,
-        imageWidth,
-        imageHeight
-    );
-
-    context.drawImage(
-        qrCanvas,
-        50,
-        35,
-        qrSize,
-        qrSize
-    );
+    context.fillRect(0, 0, imageWidth, imageHeight);
+    context.imageSmoothingEnabled = false;
+    context.drawImage(qrCanvas, 50, 35, qrSize, qrSize);
 
     context.fillStyle = "#172033";
-    context.font =
-        "bold 24px Arial, Helvetica, sans-serif";
+    context.font = "bold 24px Arial, Helvetica, sans-serif";
     context.textAlign = "center";
     context.textBaseline = "top";
 
@@ -1269,9 +1130,7 @@ function createLabelledQrImage(
     );
 
     context.fillStyle = "#667085";
-    context.font =
-        "15px Arial, Helvetica, sans-serif";
-
+    context.font = "15px Arial, Helvetica, sans-serif";
     context.fillText(
         createContentDescription(encodedContent),
         imageWidth / 2,
@@ -1280,33 +1139,21 @@ function createLabelledQrImage(
 
     downloadCanvas.toBlob(function (blob) {
         if (!blob) {
-            showQrMessage(
-                "The QR image could not be prepared.",
-                "error"
-            );
-
+            showQrMessage("The QR image could not be prepared.", "error");
             return;
         }
 
         downloadBlob(blob, displayLabel);
-
-        showQrMessage(
-            "Labelled QR code downloaded successfully.",
-            "success"
-        );
+        showQrMessage("Labelled QR code downloaded successfully.", "success");
     }, "image/png");
 }
 
 function downloadBlob(blob, label) {
     const objectUrl = URL.createObjectURL(blob);
-    const downloadLink =
-        document.createElement("a");
+    const downloadLink = document.createElement("a");
 
     downloadLink.href = objectUrl;
-
-    downloadLink.download =
-        `${createSafeFileName(label)}.png`;
-
+    downloadLink.download = `${createSafeFileName(label)}.png`;
     document.body.appendChild(downloadLink);
     downloadLink.click();
     downloadLink.remove();
@@ -1319,12 +1166,9 @@ function downloadBlob(blob, label) {
 function createDefaultLabel(content) {
     try {
         const url = new URL(content);
-
         return url.hostname.replace(/^www\./, "");
     } catch {
-        const singleLineContent = content
-            .replace(/\s+/g, " ")
-            .trim();
+        const singleLineContent = content.replace(/\s+/g, " ").trim();
 
         if (singleLineContent.length <= 60) {
             return singleLineContent;
@@ -1338,10 +1182,7 @@ function createContentDescription(content) {
     try {
         const url = new URL(content);
 
-        if (
-            url.protocol === "http:" ||
-            url.protocol === "https:"
-        ) {
+        if (url.protocol === "http:" || url.protocol === "https:") {
             return "Scan to open link";
         }
     } catch {
@@ -1377,20 +1218,14 @@ function drawWrappedText(
     let currentLine = "";
 
     for (const word of words) {
-        const testLine = currentLine
-            ? `${currentLine} ${word}`
-            : word;
+        const testLine = currentLine ? `${currentLine} ${word}` : word;
 
-        if (
-            context.measureText(testLine).width <=
-            maximumWidth
-        ) {
+        if (context.measureText(testLine).width <= maximumWidth) {
             currentLine = testLine;
         } else {
             if (currentLine) {
                 lines.push(currentLine);
             }
-
             currentLine = word;
         }
     }
@@ -1399,80 +1234,59 @@ function drawWrappedText(
         lines.push(currentLine);
     }
 
-    const visibleLines =
-        lines.slice(0, maximumLines);
+    const visibleLines = lines.slice(0, maximumLines);
 
     if (lines.length > maximumLines) {
-        let lastLine =
-            visibleLines[maximumLines - 1];
+        let lastLine = visibleLines[maximumLines - 1];
 
         while (
-            context.measureText(`${lastLine}...`).width >
-                maximumWidth &&
+            context.measureText(`${lastLine}...`).width > maximumWidth &&
             lastLine.length > 0
         ) {
             lastLine = lastLine.slice(0, -1);
         }
 
-        visibleLines[maximumLines - 1] =
-            `${lastLine.trim()}...`;
+        visibleLines[maximumLines - 1] = `${lastLine.trim()}...`;
     }
 
     visibleLines.forEach(function (line, index) {
-        context.fillText(
-            line,
-            centerX,
-            startY + index * lineHeight
-        );
+        context.fillText(line, centerX, startY + index * lineHeight);
     });
 
     return startY + visibleLines.length * lineHeight;
 }
 
-/* ---------------------------------------------------------------
-   Shared utility functions
----------------------------------------------------------------- */
+/* --------------------------------------------------------------------------
+   Shared utilities
+---------------------------------------------------------------------------- */
 
 function setStatus(elementId, message, type) {
-    const statusElement =
-        document.getElementById(elementId);
-
+    const statusElement = document.getElementById(elementId);
     statusElement.textContent = message;
     statusElement.className = `status ${type}`;
 }
 
 function showQrMessage(message, type) {
-    const messageElement =
-        document.getElementById("qrMessage");
-
+    const messageElement = document.getElementById("qrMessage");
     messageElement.textContent = message;
     messageElement.className = `message ${type}`;
 }
 
 function clearQrMessage() {
-    const messageElement =
-        document.getElementById("qrMessage");
-
+    const messageElement = document.getElementById("qrMessage");
     messageElement.textContent = "";
     messageElement.className = "message";
 }
 
 function clearCanvas(canvasId) {
-    const canvas =
-        document.getElementById(canvasId);
+    const canvas = document.getElementById(canvasId);
 
     if (!canvas) {
         return;
     }
 
     const context = canvas.getContext("2d");
-
-    context.clearRect(
-        0,
-        0,
-        canvas.width,
-        canvas.height
-    );
+    context.clearRect(0, 0, canvas.width, canvas.height);
 }
 
 function createReadableError(error, fallbackMessage) {
@@ -1487,194 +1301,12 @@ function createReadableError(error, fallbackMessage) {
     return fallbackMessage;
 }
 
-/* ---------------------------------------------------------------
-   Cleanup when page closes
----------------------------------------------------------------- */
-
-window.downloadSenderOfferQr = function () {
-    const offerCard =
-        document.getElementById("senderOfferCard");
-
-    const qrCanvas =
-        document.getElementById("senderOfferQr");
-
-    if (!selectedFile) {
-        setStatus(
-            "senderStatus",
-            "Select a file before downloading the connection QR.",
-            "error"
-        );
-
-        return;
-    }
-
-    if (!offerCard.classList.contains("active")) {
-        setStatus(
-            "senderStatus",
-            "Create the Connection QR before downloading it.",
-            "error"
-        );
-
-        return;
-    }
-
-    const imageWidth = 520;
-    const imageHeight = 610;
-    const qrSize = 440;
-
-    const downloadCanvas =
-        document.createElement("canvas");
-
-    const context =
-        downloadCanvas.getContext("2d");
-
-    downloadCanvas.width = imageWidth;
-    downloadCanvas.height = imageHeight;
-
-    context.fillStyle = "#ffffff";
-
-    context.fillRect(
-        0,
-        0,
-        imageWidth,
-        imageHeight
-    );
-
-    context.drawImage(
-        qrCanvas,
-        40,
-        25,
-        qrSize,
-        qrSize
-    );
-
-    context.fillStyle = "#172033";
-    context.textAlign = "center";
-    context.textBaseline = "top";
-
-    context.font =
-        "bold 22px Arial, Helvetica, sans-serif";
-
-    const fileName = shortenFileName(
-        selectedFile.name,
-        50
-    );
-
-    context.fillText(
-        fileName,
-        imageWidth / 2,
-        490
-    );
-
-    context.fillStyle = "#566074";
-
-    context.font =
-        "16px Arial, Helvetica, sans-serif";
-
-    context.fillText(
-        `File size: ${formatFileSize(selectedFile.size)}`,
-        imageWidth / 2,
-        525
-    );
-
-    context.fillText(
-        "Quick Transfer connection QR",
-        imageWidth / 2,
-        555
-    );
-
-    downloadCanvas.toBlob(function (blob) {
-        if (!blob) {
-            setStatus(
-                "senderStatus",
-                "The connection QR could not be prepared for download.",
-                "error"
-            );
-
-            return;
-        }
-
-        const objectUrl =
-            URL.createObjectURL(blob);
-
-        const downloadLink =
-            document.createElement("a");
-
-        const safeFileName =
-            createConnectionQrFileName(selectedFile.name);
-
-        downloadLink.href = objectUrl;
-
-        downloadLink.download =
-            `${safeFileName}-connection-qr.png`;
-
-        document.body.appendChild(downloadLink);
-
-        downloadLink.click();
-        downloadLink.remove();
-
-        window.setTimeout(function () {
-            URL.revokeObjectURL(objectUrl);
-        }, 1000);
-
-        setStatus(
-            "senderStatus",
-            "Connection QR downloaded. Keep this sender page open.",
-            "success"
-        );
-    }, "image/png");
-};
-
-function shortenFileName(fileName, maximumLength) {
-    if (fileName.length <= maximumLength) {
-        return fileName;
-    }
-
-    const extensionPosition =
-        fileName.lastIndexOf(".");
-
-    if (extensionPosition <= 0) {
-        return `${fileName.substring(
-            0,
-            maximumLength - 3
-        )}...`;
-    }
-
-    const extension =
-        fileName.substring(extensionPosition);
-
-    const availableLength =
-        maximumLength - extension.length - 3;
-
-    return (
-        fileName.substring(0, availableLength) +
-        "..." +
-        extension
-    );
-}
-
-function createConnectionQrFileName(fileName) {
-    const lastDotPosition =
-        fileName.lastIndexOf(".");
-
-    const nameWithoutExtension =
-        lastDotPosition > 0
-            ? fileName.substring(0, lastDotPosition)
-            : fileName;
-
-    const safeName = nameWithoutExtension
-        .replace(/[<>:"/\\|?*\u0000-\u001F]/g, "")
-        .replace(/\s+/g, "-")
-        .replace(/-+/g, "-")
-        .replace(/^-|-$/g, "")
-        .toLowerCase()
-        .substring(0, 50);
-
-    return safeName || "file";
-}
+/* --------------------------------------------------------------------------
+   Cleanup
+---------------------------------------------------------------------------- */
 
 window.addEventListener("beforeunload", function () {
-    window.stopQrScanner();
+    stopQrScannerInternal();
 
     if (senderDataChannel) {
         senderDataChannel.close();
@@ -1692,4 +1324,3 @@ window.addEventListener("beforeunload", function () {
         receiverPeerConnection.close();
     }
 });
-
