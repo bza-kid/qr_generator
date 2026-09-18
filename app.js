@@ -1491,6 +1491,188 @@ function createReadableError(error, fallbackMessage) {
    Cleanup when page closes
 ---------------------------------------------------------------- */
 
+window.downloadSenderOfferQr = function () {
+    const offerCard =
+        document.getElementById("senderOfferCard");
+
+    const qrCanvas =
+        document.getElementById("senderOfferQr");
+
+    if (!selectedFile) {
+        setStatus(
+            "senderStatus",
+            "Select a file before downloading the connection QR.",
+            "error"
+        );
+
+        return;
+    }
+
+    if (!offerCard.classList.contains("active")) {
+        setStatus(
+            "senderStatus",
+            "Create the Connection QR before downloading it.",
+            "error"
+        );
+
+        return;
+    }
+
+    const imageWidth = 520;
+    const imageHeight = 610;
+    const qrSize = 440;
+
+    const downloadCanvas =
+        document.createElement("canvas");
+
+    const context =
+        downloadCanvas.getContext("2d");
+
+    downloadCanvas.width = imageWidth;
+    downloadCanvas.height = imageHeight;
+
+    context.fillStyle = "#ffffff";
+
+    context.fillRect(
+        0,
+        0,
+        imageWidth,
+        imageHeight
+    );
+
+    context.drawImage(
+        qrCanvas,
+        40,
+        25,
+        qrSize,
+        qrSize
+    );
+
+    context.fillStyle = "#172033";
+    context.textAlign = "center";
+    context.textBaseline = "top";
+
+    context.font =
+        "bold 22px Arial, Helvetica, sans-serif";
+
+    const fileName = shortenFileName(
+        selectedFile.name,
+        50
+    );
+
+    context.fillText(
+        fileName,
+        imageWidth / 2,
+        490
+    );
+
+    context.fillStyle = "#566074";
+
+    context.font =
+        "16px Arial, Helvetica, sans-serif";
+
+    context.fillText(
+        `File size: ${formatFileSize(selectedFile.size)}`,
+        imageWidth / 2,
+        525
+    );
+
+    context.fillText(
+        "Quick Transfer connection QR",
+        imageWidth / 2,
+        555
+    );
+
+    downloadCanvas.toBlob(function (blob) {
+        if (!blob) {
+            setStatus(
+                "senderStatus",
+                "The connection QR could not be prepared for download.",
+                "error"
+            );
+
+            return;
+        }
+
+        const objectUrl =
+            URL.createObjectURL(blob);
+
+        const downloadLink =
+            document.createElement("a");
+
+        const safeFileName =
+            createConnectionQrFileName(selectedFile.name);
+
+        downloadLink.href = objectUrl;
+
+        downloadLink.download =
+            `${safeFileName}-connection-qr.png`;
+
+        document.body.appendChild(downloadLink);
+
+        downloadLink.click();
+        downloadLink.remove();
+
+        window.setTimeout(function () {
+            URL.revokeObjectURL(objectUrl);
+        }, 1000);
+
+        setStatus(
+            "senderStatus",
+            "Connection QR downloaded. Keep this sender page open.",
+            "success"
+        );
+    }, "image/png");
+};
+
+function shortenFileName(fileName, maximumLength) {
+    if (fileName.length <= maximumLength) {
+        return fileName;
+    }
+
+    const extensionPosition =
+        fileName.lastIndexOf(".");
+
+    if (extensionPosition <= 0) {
+        return `${fileName.substring(
+            0,
+            maximumLength - 3
+        )}...`;
+    }
+
+    const extension =
+        fileName.substring(extensionPosition);
+
+    const availableLength =
+        maximumLength - extension.length - 3;
+
+    return (
+        fileName.substring(0, availableLength) +
+        "..." +
+        extension
+    );
+}
+
+function createConnectionQrFileName(fileName) {
+    const lastDotPosition =
+        fileName.lastIndexOf(".");
+
+    const nameWithoutExtension =
+        lastDotPosition > 0
+            ? fileName.substring(0, lastDotPosition)
+            : fileName;
+
+    const safeName = nameWithoutExtension
+        .replace(/[<>:"/\\|?*\u0000-\u001F]/g, "")
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/^-|-$/g, "")
+        .toLowerCase()
+        .substring(0, 50);
+
+    return safeName || "file";
+}
+
 window.addEventListener("beforeunload", function () {
     window.stopQrScanner();
 
@@ -1510,3 +1692,4 @@ window.addEventListener("beforeunload", function () {
         receiverPeerConnection.close();
     }
 });
+

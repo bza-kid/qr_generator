@@ -369,12 +369,31 @@
             </div>
 
             <div id="senderOfferCard" class="qr-card">
-                <h3>Sender Offer QR</h3>
-                <canvas id="senderOfferQr" class="qr-canvas" width="420" height="420" aria-label="Sender WebRTC offer QR code"></canvas>
-                <p class="qr-note">
-                    Keep this page open. The receiver must scan this QR code and then show an Answer QR.
-                </p>
-            </div>
+    <h3>Sender Offer QR</h3>
+
+    <canvas
+        id="senderOfferQr"
+        class="qr-canvas"
+        width="420"
+        height="420"
+        aria-label="Sender WebRTC offer QR code"
+    ></canvas>
+
+    <div class="button-row center-row">
+        <button
+            class="primary-button"
+            type="button"
+            onclick="downloadSenderOfferQr()"
+        >
+            Download Connection QR
+        </button>
+    </div>
+
+    <p class="qr-note">
+        Keep the sender page open. Downloading the QR does not upload
+        or include the selected file.
+    </p>
+</div>
         </section>
 
         <section id="receiverPanel" class="panel">
