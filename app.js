@@ -284,66 +284,59 @@ window.downloadSenderOfferQr = async function () {
         const downloadCanvas = document.createElement("canvas");
 
         /*
-         * Generate a clean, square QR image directly.
-         * No resizing, label, border decoration, or additional text.
+         * Generate a clean square QR directly at high resolution.
+         * No resizing, label, decoration, or additional text is added.
          */
-        await QRCode.toCa*vas(
-            downloadCanvas,
- *          senderOfferQrPayload,
-  *         {
-                errorCo*rectionLevel: "L",
-               *width: 1200,
-                margi*: 8,
-                color: {
-    *               dark: "#000000",
-  *                 light: "#ffffff"
-*               }
+        await QRCode.toCanvas(downloadCanvas, senderOfferQrPayload, {
+            errorCorrectionLevel: "L",
+            width: 1200,
+            margin: 8,
+            color: {
+                dark: "#000000",
+                light: "#ffffff"
             }
-   *    );
+        });
 
-        downloadCanvas.toB*ob(function (blob) {
-            i* (!blob) {
-                setStat*s(
-                    "senderStat*s",
-                    "The conne*tion QR could not be prepared.",
- *                  "error"
-        *       );
+        downloadCanvas.toBlob(function (blob) {
+            if (!blob) {
+                setStatus(
+                    "senderStatus",
+                    "The connection QR could not be prepared.",
+                    "error"
+                );
                 return;
-*           }
+            }
 
-            const ob*ectUrl = URL.createObjectURL(blob)*
-            const downloadLink = *ocument.createElement("a");
+            const objectUrl = URL.createObjectURL(blob);
+            const downloadLink = document.createElement("a");
+            const safeFileName =
+                createConnectionQrFileName(selectedFile.name);
 
-     *      const safeFileName =
-       *        createConnectionQrFileName*selectedFile.name);
+            downloadLink.href = objectUrl;
+            downloadLink.download =
+                `${safeFileName}-connection-qr.png`;
 
-            d*wnloadLink.href = objectUrl;
-     *      downloadLink.download =
-    *           `${safeFileName}-connec*ion-qr.png`;
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            downloadLink.remove();
 
-            document*body.appendChild(downloadLink);
-  *         downloadLink.click();
-   *        downloadLink.remove();
-
-  *         window.setTimeout(functio* () {
-                URL.revokeOb*ectURL(objectUrl);
-            }, *000);
+            window.setTimeout(function () {
+                URL.revokeObjectURL(objectUrl);
+            }, 1000);
 
             setStatus(
-    *           "senderStatus",
-       *        "Clean connection QR downl*aded. Keep this page open.",
-     *          "success"
-            );*        }, "image/png");
-    } cat*h (error) {
-        console.error(*            "Connection QR downloa* failed:",
-            error
-     *  );
-
+                "senderStatus",
+                "Clean connection QR downloaded. Keep this page open.",
+                "success"
+            );
+        }, "image/png");
+    } catch (error) {
+        console.error("Connection QR download failed:", error);
         setStatus(
-         *  "senderStatus",
-            "The*connection QR could not be downloa*ed.",
+            "senderStatus",
+            "The connection QR could not be downloaded.",
             "error"
-        *;
+        );
     }
 };
 
