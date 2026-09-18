@@ -39,7 +39,7 @@ const rtcConfiguration = {
 ---------------------------------------------------------------- */
 
 window.showPanel = function (panelId) {
-    stopQrScanner();
+    window.stopQrScanner();
 
     document.getElementById("choiceSection").style.display = "none";
 
@@ -54,7 +54,7 @@ window.showChoices = function () {
     const qrPanelWasActive =
         document.getElementById("qrPanel").classList.contains("active");
 
-    stopQrScanner();
+    window.stopQrScanner();
 
     panelIds.forEach(function (id) {
         document.getElementById(id).classList.remove("active");
@@ -63,7 +63,7 @@ window.showChoices = function () {
     document.getElementById("choiceSection").style.display = "block";
 
     if (qrPanelWasActive) {
-        clearTextQrCode();
+        window.clearTextQrCode();
     }
 };
 
@@ -1492,7 +1492,7 @@ function createReadableError(error, fallbackMessage) {
 ---------------------------------------------------------------- */
 
 window.addEventListener("beforeunload", function () {
-    stopQrScanner();
+    window.stopQrScanner();
 
     if (senderDataChannel) {
         senderDataChannel.close();
